@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau site{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <a href="{{ path('app_site_index') }}" class="bc-item" style="text-decoration:none">Sites</a>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Nouveau site</span>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('app_site_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Retour aux sites
+    </a>
+
+    <div class="page-hd">
+        <div>
+            <div class="page-title">Créer un nouveau site</div>
+            <div class="page-sub">Renseignez les informations de la nouvelle instance.</div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-hd">
+            <div class="form-card-title"><i class="bi bi-plus-circle" style="color:var(--blue);margin-right:8px"></i>Informations du site</div>
+            <div class="form-card-sub">Tous les champs sont requis sauf mention contraire.</div>
+        </div>
+        {{ include('site/_form.html.twig') }}
+    </div>
+{% endblock %}

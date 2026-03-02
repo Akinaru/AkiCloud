@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sécurité{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Sécurité</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Sécurité</h1>
+            <p class="page-sub">Vue d'ensemble de la sécurité de la plateforme.</p>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div>
+                <div class="stat-val">{{ stats.connections_24h }}</div>
+                <div class="stat-lbl">Connexions 24h</div>
+            </div>
+            <div class="stat-ico blue"><i class="bi bi-box-arrow-in-right"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val">{{ stats.failed_attempts }}</div>
+                <div class="stat-lbl">Tentatives échouées</div>
+            </div>
+            <div class="stat-ico red"><i class="bi bi-shield-exclamation"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val">{{ stats.active_sessions }}</div>
+                <div class="stat-lbl">Sessions actives</div>
+            </div>
+            <div class="stat-ico green"><i class="bi bi-person-check"></i></div>
+        </div>
+    </div>
+
+    <div class="table-card" style="margin-bottom: 20px;">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title">Dernières connexions</span>
+                <span class="table-count">{{ totalAttempts }} tentatives</span>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <input type="hidden" name="page_users" value="{{ pageUsers }}">
+                    <input type="hidden" name="limit_users" value="{{ limitUsers }}">
+                    <select name="limit_attempts" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="10" {% if limitAttempts == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if limitAttempts == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limitAttempts == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span>sur {{ totalAttempts }}</span>
+                </form>
+            </div>
+        </div>
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Adresse IP</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if attempts|length > 0 %}
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td><span class="cell-name">{{ attempt.email }}</span></td>
+                        <td><span class="port-mono">{{ attempt.ipAddress }}</span></td>
+                        <td style="white-space: nowrap;">{{ attempt.attemptedAt|date('d/m/Y H:i') }}</td>
+                        <td>
+                            {% if attempt.successful %}
+                                <span class="badge badge-running"><span class="badge-dot"></span> Réussi</span>
+                            {% else %}
+                                <span class="badge badge-stopped"><span class="badge-dot"></span> Échoué</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="table-empty-row">
+                        <td colspan="4">
+                            <i class="bi bi-shield-check empty-icon"></i>
+                            <div class="empty-title">Aucune connexion enregistrée</div>
+                            <div class="empty-hint">Les tentatives de connexion apparaîtront ici.</div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        
+        <div class="table-ft" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <input type="hidden" name="page_users" value="{{ pageUsers }}">
+                    <input type="hidden" name="limit_users" value="{{ limitUsers }}">
+                    <select name="limit_attempts" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="10" {% if limitAttempts == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if limitAttempts == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limitAttempts == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span>sur {{ totalAttempts }}</span>
+                </form>
+            </div>
+
+            {% if totalPagesAttempts > 1 %}
+            <div style="display: flex; gap: 8px">
+                {% if pageAttempts > 1 %}
+                    <a href="{{ path('app_security_dashboard', {page_attempts: pageAttempts - 1, limit_attempts: limitAttempts, page_users: pageUsers, limit_users: limitUsers}) }}" class="btn btn-secondary btn-sm"><i class="bi bi-chevron-left"></i> Précédent</a>
+                {% endif %}
+                
+                <span class="btn btn-ghost btn-sm disabled" style="color: var(--text-2)">Page {{ pageAttempts }} sur {{ totalPagesAttempts }}</span>
+
+                {% if pageAttempts < totalPagesAttempts %}
+                    <a href="{{ path('app_security_dashboard', {page_attempts: pageAttempts + 1, limit_attempts: limitAttempts, page_users: pageUsers, limit_users: limitUsers}) }}" class="btn btn-secondary btn-sm">Suivant <i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div style="flex: 1"></div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title"><i class="bi bi-people" style="margin-right: 6px;"></i>Utilisateurs enregistrés</span>
+                <span class="table-count">{{ totalUsers }} comptes</span>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <input type="hidden" name="page_attempts" value="{{ pageAttempts }}">
+                    <input type="hidden" name="limit_attempts" value="{{ limitAttempts }}">
+                    <select name="limit_users" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="10" {% if limitUsers == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if limitUsers == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limitUsers == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span>sur {{ totalUsers }}</span>
+                </form>
+            </div>
+        </div>
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Rôles</th>
+                    <th>Création</th>
+                    <th>Dernière connexion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><span class="cell-name">{{ user.email }}</span></td>
+                    <td>
+                        {% for role in user.roles %}
+                            <span class="badge badge-type" style="font-size: 10px;">{{ role }}</span>
+                        {% endfor %}
+                    </td>
+                    <td style="white-space: nowrap; font-size: 12.5px; color: var(--text-2);">
+                        {{ user.createdAt|date('d/m/Y H:i') }}
+                    </td>
+                    <td style="white-space: nowrap; font-size: 12.5px; color: var(--text-2);">
+                        {% set lastLogin = loginAttemptRepo.findLastSuccessfulAttemptForUser(user.email) %}
+                        {% if lastLogin %}{{ lastLogin.attemptedAt|date('d/m/Y H:i') }}{% else %}Jamais{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if totalPagesUsers > 1 %}
+        <div class="table-ft" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 8px">
+            {% if pageUsers > 1 %}
+                <a href="{{ path('app_security_dashboard', {page_users: pageUsers - 1, limit_users: limitUsers, page_attempts: pageAttempts, limit_attempts: limitAttempts}) }}" class="btn btn-secondary btn-sm"><i class="bi bi-chevron-left"></i> Précédent</a>
+            {% endif %}
+            
+            <span class="btn btn-ghost btn-sm disabled" style="color: var(--text-2)">Page {{ pageUsers }} sur {{ totalPagesUsers }}</span>
+
+            {% if pageUsers < totalPagesUsers %}
+                <a href="{{ path('app_security_dashboard', {page_users: pageUsers + 1, limit_users: limitUsers, page_attempts: pageAttempts, limit_attempts: limitAttempts}) }}" class="btn btn-secondary btn-sm">Suivant <i class="bi bi-chevron-right"></i></a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}

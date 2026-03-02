@@ -1,0 +1,157 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paramètres globaux{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Paramètres</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <div class="page-title">Paramètres globaux</div>
+            <div class="page-sub">Configuration de l'usine à sites.</div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <div class="form-card-hd">
+            <div class="form-card-title">Infrastructure</div>
+        </div>
+        
+        <form method="post">
+            <div class="form-card-body">
+                <div class="form-grp">
+                    <label class="form-label" for="base_domain">Domaine de base</label>
+                    <input type="text" name="base_domain" id="base_domain" class="form-control" value="{{ base_domain }}" placeholder="ex: cloud.fac-info.fr">
+                    <span class="form-hint">Ce domaine sera utilisé pour générer les URLs des sites (sous-domaine.domaine-de-base).</span>
+                </div>
+                <div class="form-grp" style="margin-top: 16px;">
+                    <label class="form-label" for="sender_email">Email de l'expéditeur (From)</label>
+                    <input type="email" name="sender_email" id="sender_email" class="form-control" value="{{ sender_email }}" placeholder="ex: noreply@votre-domaine.com">
+                    <span class="form-hint">Cette adresse doit être autorisée par votre serveur SMTP (ex: Infomaniak).</span>
+                </div>
+            </div>
+
+            <div class="form-card-ft">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i>Enregistrer les modifications
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-card" style="margin-top: 24px;">
+        <div class="form-card-hd">
+            <div class="form-card-title">Base de données Partagée (Usine)</div>
+        </div>
+        <div class="form-card-body">
+            <p style="color: var(--text-2); font-size: 13.5px; margin-bottom: 20px;">
+                Cette base de données est utilisée pour créer automatiquement les instances MySQL pour les sites WordPress.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <span class="info-lbl">Hôte (Host)</span>
+                    <span class="info-val" style="font-family: monospace;">{{ db_info.host|slice(0, 4) }}****</span>
+                </div>
+                <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <span class="info-lbl">Utilisateur (User)</span>
+                    <span class="info-val" style="font-family: monospace;">{{ db_info.user }}</span>
+                </div>
+                <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <span class="info-lbl">Mot de passe</span>
+                    <span class="info-val" style="font-family: monospace;">********</span>
+                </div>
+            </div>
+        </div>
+        <div class="form-card-ft">
+            <button id="btn-test-db" class="btn btn-secondary">
+                <i class="bi bi-hdd-network"></i> Tester la connexion
+            </button>
+        </div>
+    </div>
+
+    <div class="form-card" style="margin-top: 24px;">
+        <div class="form-card-hd">
+            <div class="form-card-title">Configuration des Emails (Mailer)</div>
+        </div>
+        <div class="form-card-body">
+            <p style="color: var(--text-2); font-size: 13.5px; margin-bottom: 20px;">
+                Vérifiez si l'envoi d'emails via votre transport <strong>Infomaniak (SMTP)</strong> est fonctionnel.
+            </p>
+            <div class="form-grp">
+                <label class="form-label" for="test_email_recipient">Adresse email de test</label>
+                <input type="email" id="test_email_recipient" class="form-control" value="{{ app.user.email }}" placeholder="ex: test@example.com">
+                <span class="form-hint">L'email de test sera envoyé à cette adresse.</span>
+            </div>
+        </div>
+        <div class="form-card-ft">
+            <button id="btn-test-mailer" class="btn btn-secondary">
+                <i class="bi bi-send-check"></i> Tester l'envoi d'email
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Test DB ---
+        const btnTestDb = document.getElementById('btn-test-db');
+        if (btnTestDb) {
+            btnTestDb.addEventListener('click', () => {
+                handleUtilityTest(btnTestDb, '{{ path('admin_test_db_connection') }}', {});
+            });
+        }
+
+        // --- Test Mailer ---
+        const btnTestMailer = document.getElementById('btn-test-mailer');
+        const inputEmail = document.getElementById('test_email_recipient');
+        if (btnTestMailer) {
+            btnTestMailer.addEventListener('click', () => {
+                const email = inputEmail.value;
+                if (!email) {
+                    showToast('Erreur', 'Veuillez saisir une adresse email.', 'error');
+                    return;
+                }
+                handleUtilityTest(btnTestMailer, '{{ path('admin_test_mailer') }}', { email: email });
+            });
+        }
+
+        function handleUtilityTest(btn, url, body) {
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="margin-right: 8px;"></span>Test en cours...';
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            })
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) throw new Error(data.message || 'Erreur inconnue');
+                    return data;
+                });
+            })
+            .then(data => {
+                showToast('Succès', data.message, 'success');
+            })
+            .catch(error => {
+                console.error('Test failed:', error);
+                showToast('Échec du test', error.message || 'Impossible de joindre le serveur.', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        }
+    });
+</script>
+{% endblock %}

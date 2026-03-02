@@ -1,0 +1,362 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Documentation Technique — AkiCloud{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Documentation</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .doc-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+    }
+    .doc-tab {
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-2);
+        border-radius: var(--r-md);
+        transition: var(--t);
+        text-decoration: none;
+    }
+    .doc-tab:hover { background: var(--bg); }
+    .doc-tab.active {
+        background: var(--blue-light);
+        color: var(--blue);
+    }
+
+    .doc-container {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .doc-nav {
+        position: sticky;
+        top: calc(var(--topbar-h) + 20px);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border);
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .doc-nav-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-3);
+        margin-bottom: 12px;
+        padding-left: 12px;
+    }
+
+    .doc-nav-link {
+        display: block;
+        padding: 8px 12px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-2);
+        border-radius: var(--r-sm);
+        transition: var(--t);
+    }
+
+    .doc-nav-link:hover {
+        background: var(--bg);
+        color: var(--blue);
+    }
+
+    .doc-content {
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: 40px;
+    }
+
+    .doc-section {
+        margin-bottom: 48px;
+        scroll-margin-top: 100px;
+    }
+
+    .doc-section:last-child { margin-bottom: 0; }
+
+    .doc-section h2 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .doc-section h2 i { color: var(--blue); }
+
+    .doc-section h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 24px 0 12px;
+    }
+
+    .doc-section p {
+        color: var(--text-2);
+        line-height: 1.7;
+        margin-bottom: 16px;
+        font-size: 14.5px;
+    }
+
+    .doc-section ul {
+        margin-bottom: 16px;
+        padding-left: 20px;
+    }
+
+    .doc-section li {
+        color: var(--text-2);
+        margin-bottom: 8px;
+        line-height: 1.6;
+    }
+
+    code {
+        background: var(--bg);
+        color: var(--blue);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+
+    .code-block {
+        background: #1e1e2e;
+        color: #d9e0ee;
+        padding: 20px;
+        border-radius: 10px;
+        font-family: 'Fira Code', monospace;
+        font-size: 13px;
+        overflow-x: auto;
+        margin: 16px 0;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .doc-badge-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    .doc-img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin: 16px 0 32px;
+        max-height: 700px;
+        object-fit: contain;
+    }
+
+    @media (max-width: 1024px) {
+        .doc-container { grid-template-columns: 1fr; }
+        .doc-nav { display: none; }
+        .doc-content { padding: 24px; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Documentation Technique</h1>
+            <p class="page-sub">Guide complet de fonctionnement et d'administration de la plateforme AkiCloud.</p>
+        </div>
+    </div>
+
+    <div class="doc-tabs">
+        <a href="{{ path('admin_documentation_user') }}" class="doc-tab">Utilisation du site</a>
+        <a href="{{ path('admin_documentation_technical') }}" class="doc-tab active">Documentation technique</a>
+    </div>
+
+    <div class="doc-container">
+        <nav class="doc-nav">
+            <div class="doc-nav-title">Sommaire</div>
+            <a href="#intro" class="doc-nav-link">Introduction</a>
+            <a href="#sites" class="doc-nav-link">Gestion des Sites</a>
+            <a href="#wordpress" class="doc-nav-link">WordPress & BDD</a>
+            <a href="#coolify" class="doc-nav-link">API Coolify v4</a>
+            <a href="#infra" class="doc-nav-link">Infrastructure Coolify</a>
+            <a href="#monitoring" class="doc-nav-link">Monitoring Réel</a>
+            <a href="#notifications" class="doc-nav-link">Emails & Notifications</a>
+            <a href="#security" class="doc-nav-link">Sécurité & Rôles</a>
+            <a href="#cli" class="doc-nav-link">Commandes CLI</a>
+        </nav>
+
+        <div class="doc-content">
+            <!-- Introduction -->
+            <section id="intro" class="doc-section">
+                <h2><i class="bi bi-info-circle"></i> Introduction</h2>
+                <p>
+                    <strong>AkiCloud</strong> est une plateforme d'automatisation de déploiement d'instances pour les étudiants de l'Université Savoie Mont Blanc. 
+                    Elle sert d'interface simplifiée (Usinage à sites) au-dessus de l'infrastructure <strong>Coolify v4</strong>.
+                </p>
+                <p>
+                    L'objectif est de permettre aux enseignants de générer des centaines d'environnements de travail (WordPress ou Sites Statiques) en quelques secondes, 
+                    tout en gardant un contrôle total sur les ressources.
+                </p>
+            </section>
+
+            <!-- Gestion des Sites -->
+            <section id="sites" class="doc-section">
+                <h2><i class="bi bi-hdd-rack"></i> Gestion des Sites</h2>
+                <p>La plateforme gère deux types de déploiements :</p>
+                <ul>
+                    <li><strong>WordPress</strong> : Déploiement basé sur l'image Docker officielle avec provisioning automatique de base de données.</li>
+                    <li><strong>Site Vierge (HTML/PHP)</strong> : Déploiement basé sur un dépôt Git Monorepo interne utilisant Nixpacks.</li>
+                </ul>
+
+                <h3>Création en masse</h3>
+                <p>Le module de création en masse propose deux modes :</p>
+                <ul>
+                    <li><strong>Mode Séquentiel</strong> : Crée des sites numérotés (ex: <code>site-1</code>, <code>site-2</code>...).</li>
+                    <li><strong>Mode Liste (CSV)</strong> : Importe un fichier <code>.csv</code> (séparateur <code>;</code>) contenant les colonnes <code>nom;prenom;email</code>. Les identifiants sont générés automatiquement (ex: <code>amacheda</code>).</li>
+                </ul>
+                <p>Le champ <strong>Modèle d'URL</strong> doit impérativement contenir la balise <code>[liste]</code> qui sera remplacée dynamiquement.</p>
+            </section>
+
+            <!-- WordPress & BDD -->
+            <section id="wordpress" class="doc-section">
+                <h2><i class="bi bi-database-fill"></i> WordPress & Base de données</h2>
+                <p>
+                    Lorsqu'un site WordPress est créé, le service <code>DatabaseManager</code> effectue le provisioning sur le serveur MariaDB/MySQL partagé.
+                </p>
+                
+                <h3>Configuration via SQL Direct</h3>
+                <p>
+                    L'API Coolify d'exécution de commandes (<code>/execute</code>) étant instable, la configuration post-déploiement est effectuée par <code>WordPressConfigService</code> via une <strong>connexion PDO directe</strong> à la base du site :
+                </p>
+                <ul>
+                    <li><strong>Comptes Admin</strong> : Insertion manuelle dans <code>wp_users</code> et <code>wp_usermeta</code>.</li>
+                    <li><strong>Compte Technique</strong> : Création systématique d'un utilisateur <code>usmb</code> avec des droits administrateur.</li>
+                    <li><strong>Langue</strong> : Forçage des options <code>WPLANG</code> et <code>site_locale</code> en <code>fr_FR</code>.</li>
+                </ul>
+
+                <div class="code-block">
+                    # Variables injectées pour l'installation auto<br>
+                    WORDPRESS_DB_HOST=...<br>
+                    WORDPRESS_DB_USER=...<br>
+                    WORDPRESS_DB_PASSWORD=...<br>
+                    WORDPRESS_DB_NAME=...<br>
+                    WORDPRESS_LOCALE=fr_FR
+                </div>
+            </section>
+
+            <!-- API Coolify -->
+            <section id="coolify" class="doc-section">
+                <h2><i class="bi bi-rocket-takeoff"></i> API Coolify v4</h2>
+                <p>La plateforme utilise l'API v1 de Coolify (v4 self-hosted). Le cycle de vie d'une instance est le suivant :</p>
+                <ol>
+                    <li><strong>Création</strong> : Appel à <code>/applications/dockerimage</code> (WP) ou <code>/applications/private-deploy-key</code> (Vierge).</li>
+                    <li><strong>Variables d'env</strong> : Injection des accès BDD et de la locale.</li>
+                    <li><strong>Déploiement</strong> : Appel à <code>/deploy?uuid={uuid}</code>.</li>
+                </ol>
+                <p><strong>Note :</strong> Les endpoints d'exécution de commandes ne sont pas utilisés pour WordPress au profit du SQL direct pour une meilleure fiabilité.</p>
+            </section>
+
+            <!-- Infrastructure Coolify -->
+            <section id="infra" class="doc-section">
+                <h2><i class="bi bi-server"></i> Infrastructure & Déploiement</h2>
+                <p>
+                    L'application principale et les sites générés sont orchestrés par Coolify v4. Voici les aspects clés de cette configuration :
+                </p>
+
+                <h3>Configuration de l'Usinage (App Principale)</h3>
+                <p>
+                    L'interface Symfony est déployée via <strong>Nixpacks</strong>. Les commandes de build incluent l'installation des dépendances, la compilation Sass et les migrations de base de données.
+                </p>
+                <img src="{{ asset('img/doc/coolify-config-usmbusin.png') }}" alt="Configuration Coolify" class="doc-img">
+
+                <h3>Gestion des Ressources Étudiantes</h3>
+                <p>
+                    Chaque site étudiant est créé comme une application autonome dans le projet Coolify. Les bases de données MariaDB sont également isolées et gérées par l'infrastructure.
+                </p>
+                <img src="{{ asset('img/doc/coolify-sites-crees.png') }}" alt="Ressources Coolify" class="doc-img">
+
+                <h3>Suivi des Déploiements</h3>
+                <p>
+                    Coolify garde un historique complet des déploiements. L'application principale est synchronisée via Webhook avec GitLab, permettant une mise à jour automatique à chaque push sur la branche de production.
+                </p>
+                <img src="{{ asset('img/doc/coolify-deployments.png') }}" alt="Déploiements Coolify" class="doc-img">
+            </section>
+
+            <!-- Monitoring -->
+            <section id="monitoring" class="doc-section">
+                <h2><i class="bi bi-graph-up"></i> Monitoring Réel</h2>
+                <p>
+                    Contrairement à un simple affichage passif, le monitoring de l'AkiCloud lit directement les fichiers système de la machine Linux hébergeant PHP :
+                </p>
+                <ul>
+                    <li><strong>CPU</strong> : Calculé via <code>/proc/loadavg</code> et pondéré par le nombre de cœurs détectés dans <code>/proc/cpuinfo</code>.</li>
+                    <li><strong>RAM</strong> : Analysée depuis <code>/proc/meminfo</code> (MemTotal vs MemAvailable).</li>
+                    <li><strong>Disque</strong> : Récupéré via les fonctions <code>disk_total_space</code> de PHP sur la racine <code>/</code>.</li>
+                    <li><strong>Uptime</strong> : Extrait de <code>/proc/uptime</code>.</li>
+                </ul>
+                <p>
+                    Toutes ces données sont rafraîchies automatiquement toutes les 3 secondes via une API interne JSON et du JavaScript asynchrone.
+                </p>
+            </section>
+
+            <!-- Notifications -->
+            <section id="notifications" class="doc-section">
+                <h2><i class="bi bi-envelope-paper"></i> Emails & Notifications</h2>
+                <p>
+                                        Le système utilise <strong>Symfony Mailer</strong> avec un transport SMTP (Infomaniak recommandé).
+                     
+                    L'administrateur peut définir des modèles d'emails avec des balises dynamiques :
+                </p>
+                <div class="doc-badge-list">
+                    <span class="badge badge-type">[prenom]</span>
+                    <span class="badge badge-type">[nom]</span>
+                    <span class="badge badge-type">[email]</span>
+                    <span class="badge badge-type">[url]</span>
+                    <span class="badge badge-type">[site_name]</span>
+                </div>
+                <p>
+                    En mode "Import CSV", si un modèle est sélectionné, un email HTML stylisé est envoyé individuellement à chaque étudiant dès que l'ordre de déploiement est transmis à Coolify.
+                </p>
+            </section>
+
+            <!-- Sécurité -->
+            <section id="security" class="doc-section">
+                <h2><i class="bi bi-shield-check"></i> Sécurité & Rôles</h2>
+                <p>La plateforme utilise une hiérarchie de rôles stricte :</p>
+                <ul>
+                    <li><strong>ROLE_ADMIN</strong> : Accès total. Peut voir le monitoring, la sécurité, les modèles d'emails et gérer tous les utilisateurs.</li>
+                    <li><strong>ROLE_USER</strong> : Accès restreint. Ne voit que le Dashboard simplifié et la gestion de ses propres sites.</li>
+                </ul>
+                <p>
+                    Toutes les tentatives de connexion (réussies ou échouées) sont logguées en base de données avec l'adresse IP et l'horodatage pour l'audit de sécurité.
+                </p>
+            </section>
+
+            <!-- Commandes CLI -->
+            <section id="cli" class="doc-section">
+                <h2><i class="bi bi-terminal"></i> Commandes CLI</h2>
+                <p>La plateforme dispose de commandes personnalisées pour la maintenance :</p>
+                <ul>
+                    <li><code>php bin/console app:create-admin</code> : Commande interactive pour créer un nouveau compte administrateur.</li>
+                    <li><code>php bin/console app:sync-sites-status</code> : Synchronise manuellement l'état de tous les sites en interrogeant l'API Coolify (Utile pour une tâche Cron).</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+{% endblock %}

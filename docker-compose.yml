@@ -1,0 +1,71 @@
+services:
+  db:
+    image: mariadb:10.4
+    container_name: db_docker_akidirectory
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/db:/var/db
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: akidirectory
+      MYSQL_USER: akidirectory
+      MYSQL_PASSWORD: akidirectory
+    networks:
+      - dev
+    ports:
+      - "3309:3306"
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin_docker_akidirectory
+    depends_on:
+      - db
+    ports:
+      - "81:80"
+    environment:
+      PMA_HOST: db
+      UPLOAD_LIMIT: 100M
+    networks:
+      - dev
+
+  maildev:
+    image: maildev/maildev
+    container_name: maildev_docker_akidirectory
+    command: bin/maildev --web 80 --smtp 25 --hide-extensions STARTTLS
+    ports:
+      - "82:80"
+      - "1025:25"
+    networks:
+      - dev
+
+  www:
+    build: ./docker/php
+    container_name: www_docker_akidirectory
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/php/vhosts:/etc/apache2/sites-enabled
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      - ./:/var/www
+      - ./tmp:/tmp
+    depends_on:
+      - db
+    networks:
+      - dev
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis_docker_akidirectory
+    networks:
+      - dev
+    sysctls:
+      - "net.core.somaxconn=511"
+    ports:
+      - "6379:6379"
+
+networks:
+  dev:
+
+volumes:
+  db-data:

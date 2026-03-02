@@ -1,0 +1,601 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter des sites{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <a href="{{ path('app_site_index') }}" class="bc-item" style="text-decoration:none">Sites</a>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Ajouter des sites</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Ajouter des sites</h1>
+            <p class="page-sub">Créez un ou plusieurs sites via une séquence ou une liste d'étudiants.</p>
+        </div>
+    </div>
+
+    <div id="bulk-container" style="display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; transition: all 0.3s ease; max-width: 800px; transition: none;">
+        <div class="form-card" style="max-width: none; margin: 0;">
+            {{ form_start(form) }}
+            <div class="form-card-body">
+
+                            <div class="form-grp">
+                                {{ form_label(form.is_list, null, {'label_attr': {'class': 'form-label'}}) }}
+                                <div class="bulk-mode-selector">
+                                    {% for child in form.is_list %}
+                                        <label class="mode-option">
+                                            {{ form_widget(child, {'attr': {'style': 'width: 18px; height: 18px;'}}) }}
+                                            <span style="font-weight: 600; font-size: 14px; color: var(--text);">{{ child.vars.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                                <div class="form-grp" style="margin-top: 24px;">
+                    {{ form_label(form.prefix, null, {'label_attr': {'class': 'form-label'}}) }}
+                    <div class="hl-input-wrap" id="prefix-hl-wrap">
+                        <div class="hl-backdrop" id="prefix-hl-backdrop"><div class="hl-content"></div></div>
+                        {{ form_widget(form.prefix, {'attr': {'class': 'form-control hl-input', 'placeholder': 'ex: cours-info-[liste]', 'data-hl-backdrop': 'prefix-hl-backdrop'}}) }}
+                    </div>
+                    <div class="form-hint" style="margin-top: 8px;" id="pattern-help-text">
+                        La balise <code style="background: var(--blue-light); color: var(--blue); padding: 2px 4px; border-radius: 4px;">[liste]</code> sera remplacée par l'ID étudiant ou le numéro.
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div id="simple-mode-fields" class="form-grp">
+                        {{ form_label(form.count, null, {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.count, {'attr': {'class': 'form-control'}}) }}
+                    </div>
+                    <div id="list-mode-fields" class="form-grp" style="display:none">
+                        {{ form_label(form.csv_file, null, {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.csv_file, {'attr': {'class': 'form-control'}}) }}
+                        <a href="/import_exemple.csv" class="btn btn-ghost btn-sm" style="margin-top: 8px; font-size: 12px;">
+                            <i class="bi bi-download"></i>Télécharger le modèle CSV
+                        </a>
+                    </div>
+                    <div class="form-grp">
+                        {{ form_label(form.type, null, {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+                    </div>
+                </div>
+
+                <div id="wp-auto-config-group" class="form-grp" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); display: none;">
+                    <div class="wp-autoconfig-toggle" id="wp-autoconfig-card">
+                        <div class="wp-autoconfig-left">
+                            <div class="wp-autoconfig-icon">
+                                <i class="bi bi-wordpress"></i>
+                            </div>
+                            <div>
+                                <div class="wp-autoconfig-title">Auto-configuration WordPress</div>
+                                <div class="wp-autoconfig-desc">Installation, comptes admin et langue FR configurés automatiquement au déploiement.</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            {{ form_widget(form.auto_configure_wp, {'attr': {'class': 'toggle-input', 'id': 'wp-autoconfig-input'}}) }}
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                    <div class="wp-autoconfig-features" id="wp-autoconfig-features">
+                        <div class="wp-autoconfig-feat"><i class="bi bi-person-fill-gear"></i><span>Création du compte admin</span></div>
+                        <div class="wp-autoconfig-feat"><i class="bi bi-translate"></i><span>Langue française (fr_FR)</span></div>
+                        <div class="wp-autoconfig-feat"><i class="bi bi-eye-slash"></i><span>Indexation désactivée</span></div>
+                    </div>
+                </div>
+
+                <div id="email-template-group" class="form-grp" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); display: none;">
+                    {{ form_label(form.email_template, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.email_template, {'attr': {'class': 'form-select'}}) }}
+                    <span class="form-hint">Un email sera envoyé à chaque propriétaire de site s'il est défini dans la liste.</span>
+                </div>
+            </div>
+
+                    <div class="form-card-ft">
+                        <a href="{{ path('app_site_index') }}" class="btn btn-ghost">Annuler</a>
+                        <button type="submit" id="btn-submit-bulk" class="btn btn-primary btn-lg">
+                            <i class="bi bi-rocket-takeoff"></i>Lancer la génération
+                        </button>
+                    </div>
+                    {{ form_end(form) }}
+                </div>
+
+                <div id="csv-guide-card" class="table-card" style="padding: 24px; display: none;">
+
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-info-circle" style="color: var(--blue);"></i>
+                <span id="csv-card-title">Format du fichier CSV</span>
+            </h3>
+
+            <p id="csv-card-desc" style="font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-bottom: 16px;">
+                Le fichier doit utiliser le point-virgule (<code style="font-weight: 700;">;</code>) comme séparateur.
+            </p>
+
+            <div class="csv-table-wrap">
+                <table class="csv-table" id="csv-table">
+                    <thead>
+                        <tr>
+                            <th>nom</th>
+                            <th>prenom</th>
+                            <th>email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="csv-tbody">
+                        <tr>
+                            <td>Gallot</td>
+                            <td>Marc</td>
+                            <td>mgallot@akinaru.fr</td>
+                        </tr>
+                        <tr>
+                            <td>Macheda</td>
+                            <td>Adam</td>
+                            <td>amacheda@akinaru.fr</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="csv-pagination" style="display:none; margin-top: 12px; align-items: center; justify-content: center; gap: 6px;">
+                <button type="button" id="csv-prev" class="csv-pg-btn"><i class="bi bi-chevron-left"></i></button>
+                <span id="csv-page-info" style="font-size: 12px; font-weight: 600; color: var(--text-2); min-width: 50px; text-align: center;"></span>
+                <button type="button" id="csv-next" class="csv-pg-btn"><i class="bi bi-chevron-right"></i></button>
+            </div>
+
+            <div id="csv-stats" style="display:none; margin-top: 12px; font-size: 12px; color: var(--text-2); text-align: center;"></div>
+
+            <div id="csv-hints" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="bi bi-check2-circle" style="color: var(--green); margin-top: 2px;"></i>
+                    <span style="font-size: 12px; color: var(--text-2);">L'ID est généré automatiquement (ex: amacheda).</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="bi bi-check2-circle" style="color: var(--green); margin-top: 2px;"></i>
+                    <span style="font-size: 12px; color: var(--text-2);">L'encodage doit être UTF-8.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .bulk-mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+        .mode-option { border: 1px solid var(--border); padding: 16px; border-radius: var(--r-md); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: var(--t); }
+
+        .mode-option:has(input:checked) {
+            border-color: var(--blue) !important;
+            background: var(--blue-light);
+        }
+
+        @media (max-width: 1024px) {
+            #bulk-container {
+                grid-template-columns: 1fr !important;
+                max-width: 100% !important;
+            }
+            #csv-guide-card {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .bulk-mode-selector { grid-template-columns: 1fr; }
+        }
+
+        /* [liste] variable highlighting */
+        .hl-input-wrap {
+            position: relative;
+        }
+        .hl-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: var(--r-sm);
+            border: 1px solid transparent;
+            padding: 8px 12px;
+            z-index: 0;
+        }
+        .hl-content {
+            font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: transparent;
+            white-space: pre;
+        }
+        .hl-content mark {
+            background: var(--blue-light);
+            color: transparent;
+            border-radius: 3px;
+            padding: 1px 0;
+        }
+        .hl-input {
+            position: relative;
+            z-index: 1;
+            background: transparent !important;
+        }
+
+        /* CSV preview table */
+        .csv-table-wrap {
+            background: #f8f9fd;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .csv-table {
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+        }
+        .csv-table thead { background: #eff2f7; }
+        .csv-table th {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            color: var(--text);
+        }
+        .csv-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .csv-table tbody tr:last-child td { border-bottom: none; }
+        .csv-table td.csv-cell-error {
+            background: var(--red-bg);
+            color: var(--red);
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        /* WP auto-config toggle */
+        .wp-autoconfig-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 18px;
+            border-radius: var(--r-md);
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            transition: var(--t);
+        }
+        .wp-autoconfig-toggle.active {
+            border-color: var(--blue);
+            background: #f8f8ff;
+        }
+        .wp-autoconfig-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+        .wp-autoconfig-icon {
+            width: 40px; height: 40px;
+            border-radius: var(--r-sm);
+            background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            color: var(--text-3);
+            flex-shrink: 0;
+            transition: var(--t);
+        }
+        .wp-autoconfig-toggle.active .wp-autoconfig-icon {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+        .wp-autoconfig-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.3;
+        }
+        .wp-autoconfig-desc {
+            font-size: 12px;
+            color: var(--text-2);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* Toggle switch */
+        .toggle-switch {
+            position: relative;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .toggle-input {
+            position: absolute;
+            opacity: 0;
+            width: 0; height: 0;
+        }
+        .toggle-track {
+            display: block;
+            width: 44px; height: 24px;
+            background: var(--border-strong);
+            border-radius: 12px;
+            transition: background .2s ease;
+            position: relative;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 18px; height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,.15);
+            transition: transform .2s ease;
+        }
+        .toggle-input:checked + .toggle-track {
+            background: var(--blue);
+        }
+        .toggle-input:checked + .toggle-track .toggle-thumb {
+            transform: translateX(20px);
+        }
+
+        /* Feature pills */
+        .wp-autoconfig-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height .25s ease, opacity .2s ease, margin-top .25s ease;
+            margin-top: 0;
+        }
+        .wp-autoconfig-features.visible {
+            max-height: 60px;
+            opacity: 1;
+            margin-top: 10px;
+        }
+        .wp-autoconfig-feat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            background: var(--blue-light);
+            color: var(--blue);
+            font-size: 11.5px;
+            font-weight: 600;
+            border-radius: 20px;
+        }
+        .wp-autoconfig-feat i {
+            font-size: 12px;
+        }
+
+        /* CSV pagination arrows */
+        .csv-pg-btn {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: var(--text-3);
+            font-size: 14px;
+            border-radius: 4px;
+            transition: var(--t);
+        }
+        .csv-pg-btn:not(:disabled):hover {
+            color: #fff;
+            background: var(--blue);
+        }
+        .csv-pg-btn:not(:disabled) {
+            color: var(--blue);
+        }
+        .csv-pg-btn:disabled {
+            cursor: default;
+            color: var(--text-3);
+            opacity: 0.4;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // [liste] variable highlighting
+            function hlListeVar(text) {
+                let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                escaped = escaped.replace(/\[liste\]/gi, '<mark>[liste]</mark>');
+                return escaped;
+            }
+
+            const hlInput = document.querySelector('.hl-input');
+            if (hlInput) {
+                const backdropId = hlInput.getAttribute('data-hl-backdrop');
+                const backdrop = document.getElementById(backdropId);
+                const hlContent = backdrop ? backdrop.querySelector('.hl-content') : null;
+
+                function syncHl() {
+                    if (hlContent) hlContent.innerHTML = hlListeVar(hlInput.value) + '\u00a0';
+                }
+                hlInput.addEventListener('input', syncHl);
+                syncHl();
+            }
+
+            const isListInputs = document.querySelectorAll('input[name*="[is_list]"]');
+            const simpleFields = document.getElementById('simple-mode-fields');
+            const listFields = document.getElementById('list-mode-fields');
+            const emailGroup = document.getElementById('email-template-group');
+            const wpAutoConfigGroup = document.getElementById('wp-auto-config-group');
+            const helpText = document.getElementById('pattern-help-text');
+            const csvGuide = document.getElementById('csv-guide-card');
+            const bulkContainer = document.getElementById('bulk-container');
+            const typeSelect = document.querySelector('select[name*="[type]"]');
+
+            const toggleModes = () => {
+                const isList = document.querySelector('input[name*="[is_list]"]:checked').value === '1';
+                if (isList) {
+                    simpleFields.style.display = 'none';
+                    listFields.style.display = 'block';
+                    emailGroup.style.display = 'block';
+                    csvGuide.style.display = 'block';
+                    bulkContainer.style.gridTemplateColumns = '1fr 420px';
+                    bulkContainer.style.maxWidth = '1244px';
+                    helpText.innerHTML = `La balise <code style="background: var(--blue-light); color: var(--blue); padding: 2px 4px; border-radius: 4px;">[liste]</code> sera remplacée par l'identifiant généré (ex: amacheda).`;
+                } else {
+                    simpleFields.style.display = 'block';
+                    listFields.style.display = 'none';
+                    emailGroup.style.display = 'none';
+                    csvGuide.style.display = 'none';
+                    bulkContainer.style.gridTemplateColumns = '1fr';
+                    bulkContainer.style.maxWidth = '800px';
+                    helpText.innerHTML = `La balise <code style="background: var(--blue-light); color: var(--blue); padding: 2px 4px; border-radius: 4px;">[liste]</code> sera remplacée par un numéro incrémenté (1, 2, 3...).`;
+                }
+                toggleWpConfig();
+            };
+
+            const toggleWpConfig = () => {
+                const isWp = typeSelect && typeSelect.value === 'wordpress';
+                wpAutoConfigGroup.style.display = isWp ? 'block' : 'none';
+            };
+
+            // WP auto-config toggle visual sync
+            const wpToggleInput = document.getElementById('wp-autoconfig-input');
+            const wpCard = document.getElementById('wp-autoconfig-card');
+            const wpFeatures = document.getElementById('wp-autoconfig-features');
+
+            function syncWpToggle() {
+                if (!wpToggleInput || !wpCard) return;
+                if (wpToggleInput.checked) {
+                    wpCard.classList.add('active');
+                    wpFeatures.classList.add('visible');
+                } else {
+                    wpCard.classList.remove('active');
+                    wpFeatures.classList.remove('visible');
+                }
+            }
+            if (wpToggleInput) {
+                wpToggleInput.addEventListener('change', syncWpToggle);
+                syncWpToggle();
+            }
+
+            isListInputs.forEach(input => input.addEventListener('change', toggleModes));
+            if (typeSelect) typeSelect.addEventListener('change', toggleWpConfig);
+            toggleModes();
+
+            // --- CSV preview ---
+            const csvFileInput = document.querySelector('input[name*="[csv_file]"]');
+            const csvTbody = document.getElementById('csv-tbody');
+            const csvPagination = document.getElementById('csv-pagination');
+            const csvPageInfo = document.getElementById('csv-page-info');
+            const csvPrev = document.getElementById('csv-prev');
+            const csvNext = document.getElementById('csv-next');
+            const csvStats = document.getElementById('csv-stats');
+            const csvCardTitle = document.getElementById('csv-card-title');
+            const csvCardDesc = document.getElementById('csv-card-desc');
+
+            let csvRows = [];
+            let csvPage = 0;
+            const CSV_PER_PAGE = 10;
+
+            function renderCsvPage() {
+                const totalPages = Math.max(1, Math.ceil(csvRows.length / CSV_PER_PAGE));
+                const start = csvPage * CSV_PER_PAGE;
+                const pageRows = csvRows.slice(start, start + CSV_PER_PAGE);
+
+                csvTbody.innerHTML = '';
+                pageRows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    ['nom', 'prenom', 'email'].forEach(key => {
+                        const td = document.createElement('td');
+                        const val = (row[key] || '').trim();
+                        if (!val) {
+                            td.classList.add('csv-cell-error');
+                            td.textContent = '—';
+                        } else {
+                            td.textContent = val;
+                        }
+                        tr.appendChild(td);
+                    });
+                    csvTbody.appendChild(tr);
+                });
+
+                csvPageInfo.textContent = csvPage + 1 + ' / ' + totalPages;
+                csvPrev.disabled = csvPage === 0;
+                csvNext.disabled = csvPage >= totalPages - 1;
+
+                const errorCount = csvRows.filter(r => !r.nom.trim() || !r.prenom.trim() || !r.email.trim()).length;
+                if (errorCount > 0) {
+                    csvStats.style.display = 'block';
+                    csvStats.innerHTML = '<span style="color:var(--red);font-weight:600;">' + errorCount + ' ligne' + (errorCount > 1 ? 's' : '') + ' incomplète' + (errorCount > 1 ? 's' : '') + '</span> sur ' + csvRows.length;
+                } else {
+                    csvStats.style.display = 'block';
+                    csvStats.innerHTML = csvRows.length + ' ligne' + (csvRows.length > 1 ? 's' : '') + ' importée' + (csvRows.length > 1 ? 's' : '');
+                }
+            }
+
+            function parseCsv(text) {
+                const lines = text.split(/\r?\n/).filter(l => l.trim());
+                if (lines.length < 2) return [];
+
+                const header = lines[0].split(';').map(h => h.trim().toLowerCase());
+                const nomIdx = header.indexOf('nom');
+                const prenomIdx = header.indexOf('prenom');
+                const emailIdx = header.indexOf('email');
+
+                if (nomIdx === -1 || prenomIdx === -1 || emailIdx === -1) return [];
+
+                const rows = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(';');
+                    rows.push({
+                        nom: cols[nomIdx] || '',
+                        prenom: cols[prenomIdx] || '',
+                        email: cols[emailIdx] || ''
+                    });
+                }
+                return rows;
+            }
+
+            if (csvFileInput) {
+                csvFileInput.addEventListener('change', () => {
+                    const file = csvFileInput.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        csvRows = parseCsv(e.target.result);
+                        if (csvRows.length === 0) {
+                            showToast('Erreur CSV', 'Le fichier ne contient pas les colonnes attendues (nom, prenom, email).', 'error');
+                            return;
+                        }
+                        csvPage = 0;
+                        csvCardTitle.textContent = 'Aperçu de l\'import';
+                        csvCardDesc.textContent = csvRows.length + ' entrée' + (csvRows.length > 1 ? 's' : '') + ' détectée' + (csvRows.length > 1 ? 's' : '') + ' dans le fichier.';
+                        csvPagination.style.display = 'flex';
+                        renderCsvPage();
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                });
+            }
+
+            if (csvPrev) csvPrev.addEventListener('click', () => { if (csvPage > 0) { csvPage--; renderCsvPage(); } });
+            if (csvNext) csvNext.addEventListener('click', () => { if (csvPage < Math.ceil(csvRows.length / CSV_PER_PAGE) - 1) { csvPage++; renderCsvPage(); } });
+
+            // Validation avant soumission
+            const form = document.querySelector('form');
+            const prefixInput = document.querySelector('input[name*="[prefix]"]');
+
+            form.addEventListener('submit', (e) => {
+                if (!prefixInput.value.toLowerCase().includes('[liste]')) {
+                    e.preventDefault();
+                    showToast('Erreur de format', 'Le modèle d\'URL doit impérativement contenir la balise [liste].', 'error');
+                    prefixInput.focus();
+                    prefixInput.classList.add('is-invalid');
+                    return;
+                }
+
+                // Passage en mode chargement pour éviter le double clic
+                const btnSubmit = document.getElementById('btn-submit-bulk');
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 8px;"></span>Création en cours...';
+                }
+            });
+
+            prefixInput.addEventListener('input', () => {
+                if (prefixInput.value.toLowerCase().includes('[liste]')) {
+                    prefixInput.classList.remove('is-invalid');
+                }
+            });
+        });
+    </script>
+{% endblock %}

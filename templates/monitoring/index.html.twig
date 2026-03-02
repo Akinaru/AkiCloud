@@ -1,0 +1,180 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Monitoring{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Monitoring</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Monitoring</h1>
+            <p class="page-sub">Surveillance des ressources serveur en temps réel.</p>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div>
+                <div class="stat-val" id="stat-cpu">{{ stats.cpu }}%</div>
+                <div class="stat-lbl">CPU</div>
+                <div style="margin-top: 10px; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; width: 120px;">
+                    <div id="bar-cpu" style="height: 100%; width: {{ stats.cpu }}%; background: var(--blue); border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div class="stat-ico blue"><i class="bi bi-cpu"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val"><span id="stat-ram-used">{{ stats.ram_used }}</span><small style="font-size: 14px; font-weight: 500; color: var(--text-2);">/<span id="stat-ram-total">{{ stats.ram_total }}</span> Go</small></div>
+                <div class="stat-lbl">Mémoire RAM</div>
+                <div style="margin-top: 10px; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; width: 120px;">
+                    <div id="bar-ram" style="height: 100%; width: {{ (stats.ram_used / stats.ram_total * 100)|round }}%; background: var(--green); border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div class="stat-ico green"><i class="bi bi-memory"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val"><span id="stat-disk-used">{{ stats.disk_used }}</span><small style="font-size: 14px; font-weight: 500; color: var(--text-2);">/<span id="stat-disk-total">{{ stats.disk_total }}</span> Go</small></div>
+                <div class="stat-lbl">Disque</div>
+                <div style="margin-top: 10px; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; width: 120px;">
+                    <div id="bar-disk" style="height: 100%; width: {{ (stats.disk_used / stats.disk_total * 100)|round }}%; background: var(--orange); border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div class="stat-ico orange"><i class="bi bi-hdd"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val" id="stat-uptime">{{ stats.uptime }}</div>
+                <div class="stat-lbl">Uptime</div>
+            </div>
+            <div class="stat-ico blue"><i class="bi bi-clock-history"></i></div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title">Événements système</span>
+                <span class="table-count">{{ totalEvents }} événements</span>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center">
+                {% if totalEvents > 0 %}
+                <form method="post" action="{{ path('app_monitoring_clear') }}" onsubmit="return confirm('Voulez-vous vraiment supprimer tous les événements système ?');">
+                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--red); border-color: rgba(239, 51, 64, 0.2);">
+                        <i class="bi bi-trash3"></i> Effacer tout
+                    </button>
+                </form>
+                {% endif %}
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <select name="limit_events" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="10" {% if limitEvents == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if limitEvents == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limitEvents == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span>sur {{ totalEvents }}</span>
+                </form>
+            </div>
+        </div>
+        <table class="dtable" style="table-layout: auto; width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 160px;">Date</th>
+                    <th style="width: 120px;">Type</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td style="white-space: nowrap; vertical-align: top;">{{ event.createdAt|date('d/m/Y H:i') }}</td>
+                    <td style="vertical-align: top;">
+                        {% if event.type == 'info' %}
+                            <span class="badge badge-type"><i class="bi bi-info-circle" style="font-size: 11px;"></i> Info</span>
+                        {% elseif event.type == 'warning' %}
+                            <span class="badge" style="background: var(--orange-bg); color: var(--orange);"><i class="bi bi-exclamation-triangle" style="font-size: 11px;"></i> Warning</span>
+                        {% elseif event.type == 'error' %}
+                            <span class="badge badge-stopped"><i class="bi bi-x-circle" style="font-size: 11px;"></i> Erreur</span>
+                        {% endif %}
+                    </td>
+                    <td style="word-break: break-word; min-width: 200px;">{{ event.message }}</td>
+                </tr>
+                {% else %}
+                    <tr class="table-empty-row">
+                        <td colspan="3">
+                            <i class="bi bi-bell-slash empty-icon"></i>
+                            <div class="empty-title">Aucun événement système</div>
+                            <div class="empty-hint">Les événements importants apparaîtront ici.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="table-ft" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <select name="limit_events" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="10" {% if limitEvents == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if limitEvents == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limitEvents == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span>sur {{ totalEvents }}</span>
+                </form>
+            </div>
+
+            {% if totalPagesEvents > 1 %}
+            <div style="display: flex; gap: 8px">
+                {% if pageEvents > 1 %}
+                    <a href="{{ path('app_monitoring', {page_events: pageEvents - 1, limit_events: limitEvents}) }}" class="btn btn-secondary btn-sm"><i class="bi bi-chevron-left"></i> Précédent</a>
+                {% endif %}
+                
+                <span class="btn btn-ghost btn-sm disabled" style="color: var(--text-2)">Page {{ pageEvents }} sur {{ totalPagesEvents }}</span>
+
+                {% if pageEvents < totalPagesEvents %}
+                    <a href="{{ path('app_monitoring', {page_events: pageEvents + 1, limit_events: limitEvents}) }}" class="btn btn-secondary btn-sm">Suivant <i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div style="flex: 1"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    function updateStats() {
+        fetch('{{ path('api_monitoring_stats') }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update CPU
+                document.getElementById('stat-cpu').textContent = data.cpu + '%';
+                document.getElementById('bar-cpu').style.width = data.cpu + '%';
+
+                // Update RAM
+                document.getElementById('stat-ram-used').textContent = data.ram_used;
+                document.getElementById('stat-ram-total').textContent = data.ram_total;
+                const ramPercent = Math.round((data.ram_used / data.ram_total) * 100);
+                document.getElementById('bar-ram').style.width = ramPercent + '%';
+
+                // Update Disk
+                document.getElementById('stat-disk-used').textContent = data.disk_used;
+                document.getElementById('stat-disk-total').textContent = data.disk_total;
+                const diskPercent = Math.round((data.disk_used / data.disk_total) * 100);
+                document.getElementById('bar-disk').style.width = diskPercent + '%';
+
+                // Update Uptime
+                document.getElementById('stat-uptime').textContent = data.uptime;
+            })
+            .catch(error => console.error('Error fetching stats:', error));
+    }
+
+    // Update every 3 seconds
+    setInterval(updateStats, 3000);
+</script>
+{% endblock %}

@@ -1,0 +1,116 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const EMAIL_VARS = ['[prenom]', '[nom]', '[email]', '[url]', '[site_name]', '[wp_user]', '[wp_password]'];
+    const SAMPLE_VALUES = {
+        '[prenom]': 'Jean',
+        '[nom]': 'Dupont',
+        '[email]': 'jean.dupont@akinaru.fr',
+        '[url]': 'https://votre-site.akinaru.fr',
+        '[site_name]': 'Projet-De-Test',
+        '[wp_user]': 'jdupont',
+        '[wp_password]': 'Ax7!kP9mZ2qR'
+    };
+
+    // --- Formatting helpers ---
+    // Order matters: bold ** before italic * to avoid conflicts
+    function applyFormattingHighlight(html) {
+        // **bold**
+        html = html.replace(/\*\*(.+?)\*\*/g, '<mark class="hl-bold">**$1**</mark>');
+        // __underline__
+        html = html.replace(/__(.+?)__/g, '<mark class="hl-underline">__$1__</mark>');
+        // *italic* (but not inside ** pairs — already handled)
+        html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<mark class="hl-italic">*$1*</mark>');
+        return html;
+    }
+
+    function applyFormattingPreview(html) {
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<u>$1</u>');
+        html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+        return html;
+    }
+
+    // --- Variable highlighting in inputs/textareas ---
+    function highlightVars(text) {
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        EMAIL_VARS.forEach(v => {
+            const pattern = v.replace('[', '\\[').replace(']', '\\]');
+            escaped = escaped.replace(new RegExp(pattern, 'g'), '<mark>' + v.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</mark>');
+        });
+
+        escaped = applyFormattingHighlight(escaped);
+
+        return escaped + '\n';
+    }
+
+    function syncHighlight(input) {
+        const backdropId = input.getAttribute('data-highlight-target');
+        if (!backdropId) return;
+        const backdrop = document.getElementById(backdropId);
+        if (!backdrop) return;
+        const content = backdrop.querySelector('.highlight-content');
+        content.innerHTML = highlightVars(input.value);
+    }
+
+    function syncScroll(input) {
+        const backdropId = input.getAttribute('data-highlight-target');
+        if (!backdropId) return;
+        const backdrop = document.getElementById(backdropId);
+        if (!backdrop) return;
+        backdrop.scrollTop = input.scrollTop;
+        backdrop.scrollLeft = input.scrollLeft;
+    }
+
+    document.querySelectorAll('.highlight-input').forEach(input => {
+        input.addEventListener('input', () => { syncHighlight(input); updatePreview(); });
+        input.addEventListener('scroll', () => syncScroll(input));
+        syncHighlight(input);
+    });
+
+    // --- Live preview ---
+    const contentTextarea = document.querySelector('textarea[name*="[content]"]');
+    const subjectInput = document.querySelector('input[name*="[subject]"]');
+    const previewBody = document.getElementById('email-preview');
+
+    function updatePreview() {
+        if (!contentTextarea || !previewBody) return;
+
+        let text = contentTextarea.value.trim();
+        if (!text) {
+            previewBody.innerHTML = '<span style="color:#9aa0bc;font-style:italic;">Commencez à taper du contenu pour voir l\'aperçu...</span>';
+            return;
+        }
+
+        // Escape HTML
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Replace variables with sample values (plain text, no styling)
+        EMAIL_VARS.forEach(v => {
+            const pattern = v.replace('[', '\\[').replace(']', '\\]');
+            const sample = SAMPLE_VALUES[v] || v;
+            escaped = escaped.replace(new RegExp(pattern, 'g'), sample);
+        });
+
+        // Apply formatting (bold, italic, underline)
+        escaped = applyFormattingPreview(escaped);
+
+        // Convert newlines to <br>
+        previewBody.innerHTML = escaped.replace(/\n/g, '<br>');
+    }
+
+    if (contentTextarea) {
+        contentTextarea.addEventListener('input', updatePreview);
+        updatePreview();
+    }
+    if (subjectInput) {
+        subjectInput.addEventListener('input', updatePreview);
+    }
+});
+</script>

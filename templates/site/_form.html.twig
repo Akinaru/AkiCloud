@@ -1,0 +1,60 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+<div class="form-card-body">
+    <div class="form-grp">
+        {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.name, {'attr': {'class': 'form-control' ~ (form.name.vars.valid ? '' : ' is-invalid'), 'placeholder': 'ex: site-dupont-2024'}}) }}
+        {{ form_errors(form.name) }}
+        <span class="form-hint">Nom unique identifiant le projet de l'étudiant.</span>
+    </div>
+
+    <div class="form-row-2">
+        <div class="form-grp">
+            {{ form_label(form.type, 'Type de stack', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.type, {'attr': {'class': 'form-select' ~ (form.type.vars.valid ? '' : ' is-invalid')}}) }}
+            {{ form_errors(form.type) }}
+        </div>
+        <div class="form-grp">
+            {{ form_label(form.port, 'Port (Optionnel)', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.port, {'attr': {'class': 'form-control' ~ (form.port.vars.valid ? '' : ' is-invalid'), 'placeholder': '80'}}) }}
+            {{ form_errors(form.port) }}
+        </div>
+    </div>
+
+    <div style="padding: 20px; background: #f8f9fd; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px;">
+        <div style="font-weight: 700; font-size: 13.5px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-person-badge" style="color: var(--blue);"></i>Informations propriétaire (Optionnel)
+        </div>
+        <div class="form-row-2">
+            <div class="form-grp">
+                {{ form_label(form.ownerFirstname, 'Prénom', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Jean'}}) }}
+            </div>
+            <div class="form-grp">
+                {{ form_label(form.ownerLastname, 'Nom', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Dupont'}}) }}
+            </div>
+        </div>
+        <div class="form-grp" style="margin-bottom: 0;">
+            {{ form_label(form.ownerEmail, 'Email', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control', 'placeholder': 'ex: jean.dupont@akinaru.fr'}}) }}
+        </div>
+    </div>
+
+    <div class="form-grp" style="margin-top: 12px;">
+        {{ form_label(form.pendingEmailTemplate, 'Notifier à la fin du déploiement', {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
+        <span class="form-hint">L'email sera envoyé automatiquement dès que l'instance sera opérationnelle (Running).</span>
+    </div>
+</div>
+
+<div class="form-card-ft">
+    <a href="{{ path('app_site_index') }}" class="btn btn-ghost">
+        <i class="bi bi-arrow-left"></i>Annuler
+    </a>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i>{{ button_label|default('Enregistrer') }}
+    </button>
+</div>
+
+{{ form_end(form) }}

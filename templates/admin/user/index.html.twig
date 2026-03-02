@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utilisateurs{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Utilisateurs</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Utilisateurs</h1>
+            <p class="page-sub">Gérez les comptes d'accès à la plateforme</p>
+        </div>
+        <a href="{{ path('admin_user_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>Nouvel utilisateur
+        </a>
+    </div>
+
+    <div class="table-card">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title">Tous les utilisateurs</span>
+                <span class="table-count">{{ users|length }}</span>
+            </div>
+        </div>
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Créé le</th>
+                    <th>Dernière connexion</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div class="user-avatar" style="width:32px;height:32px;font-size:10px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">
+                                    {{ user.initials }}
+                                </div>
+                                <div>
+                                    <div class="cell-name">{{ user.fullName }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="color:var(--text-2)">{{ user.email }}</span>
+                        </td>
+                        <td>
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="badge badge-running"><span class="badge-dot"></span>Admin</span>
+                            {% else %}
+                                <span class="badge badge-type">User</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="color:var(--text-2);font-size:12.5px">{{ user.createdAt|date('d/m/Y') }}</span>
+                        </td>
+                        <td>
+                            <span style="color:var(--text-2);font-size:12.5px">
+                                {% set lastLogin = loginAttemptRepo.findLastSuccessfulAttemptForUser(user.email) %}
+                                {% if lastLogin %}{{ lastLogin.attemptedAt|date('d/m/Y H:i') }}{% else %}Jamais{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="actions-row">
+                                <a href="{{ path('admin_user_show', {'id': user.id}) }}" class="btn btn-ghost btn-sm" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-secondary btn-sm" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr class="table-empty-row">
+                        <td colspan="5">
+                            <i class="bi bi-people empty-icon"></i>
+                            <div class="empty-title">Aucun utilisateur</div>
+                            <div class="empty-hint">Créez un premier utilisateur pour commencer</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

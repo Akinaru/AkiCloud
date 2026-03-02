@@ -1,0 +1,9 @@
+twig:
+    file_name_pattern: '*.twig'
+    date:
+        timezone: Europe/Paris
+        format: 'd/m/Y H:i'
+
+when@test:
+    twig:
+        strict_variables: true

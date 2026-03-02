@@ -1,0 +1,27 @@
+###> IDE ###
+/.idea/
+.idea/vcs.xml
+.idea/workspace.xml
+###< IDE ###
+
+###> symfony/framework-bundle ###
+.env
+/.env
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+/tmp/
+###< symfony/framework-bundle ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> symfonycasts/sass-bundle ###
+/public/assets/
+###< symfonycasts/sass-bundle ###

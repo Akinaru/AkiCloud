@@ -1,0 +1,559 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sites{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Sites</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .badge-building, .badge-starting, .badge-restarting {
+        background: #e6f0ff;
+        color: var(--blue);
+    }
+    .badge-building .badge-dot, .badge-starting .badge-dot, .badge-restarting .badge-dot {
+        background: var(--blue);
+        animation: pulse 2s infinite;
+    }
+
+    .badge-failed {
+        background: var(--red-bg);
+        color: var(--red);
+        border: 1px solid rgba(239, 51, 64, 0.2);
+    }
+    .badge-failed .badge-dot {
+        background: var(--red);
+    }
+
+    .badge-stopping {
+        background: #fff0e6;
+        color: #e67700;
+    }
+    .badge-stopping .badge-dot {
+        background: #e67700;
+        animation: pulse 2s infinite;
+    }
+
+    .badge-sync {
+        background: #f0f2f5;
+        color: var(--text-2);
+    }
+
+    /* Bulk Actions Toolbar */
+    .bulk-toolbar {
+        position: sticky;
+        top: calc(var(--topbar-h) + 10px);
+        z-index: 40;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-md);
+        padding: 12px 24px;
+        margin-bottom: 16px;
+        display: none;
+        align-items: center;
+        gap: 16px;
+        animation: slide-down 0.2s ease-out;
+    }
+    @keyframes slide-down {
+        from { transform: translateY(-10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .bulk-toolbar.active { display: flex; }
+    .bulk-count { font-weight: 700; color: var(--blue); font-size: 13px; }
+
+    @media (max-width: 768px) {
+        .page-hd-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+        }
+        .page-hd-actions .btn {
+            justify-content: center;
+        }
+        .btn-txt { display: none; }
+        .page-hd-actions .btn i { margin: 0; font-size: 18px; }
+
+        .bulk-toolbar {
+            padding: 12px 16px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .bulk-sep { display: none; }
+        .bulk-actions-wrap {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .bulk-actions-wrap select { flex: 1; }
+        .bulk-label { display: none; }
+    }
+
+    .bulk-sep { height: 20px; width: 1px; background: var(--border); }
+    .bulk-actions-wrap { display: flex; align-items: center; gap: 8px; }
+    .bulk-label { font-size: 13px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <div class="page-title">Sites</div>
+            <div class="page-sub">Gestion de toutes les instances déployées.</div>
+        </div>
+        <div class="page-hd-actions">
+            <a href="{{ path('app_site_bulk_create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i><span class="btn-txt">Ajouter des sites</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Toolbar -->
+    <div class="bulk-toolbar" id="bulk-toolbar">
+        <div class="bulk-count"><span id="selected-count">0</span> <span class="bulk-txt">sites sélectionnés</span></div>
+        <div class="bulk-sep"></div>
+        <div class="bulk-actions-wrap">
+            <span class="bulk-label">Action :</span>
+            <select id="bulk-action-select" class="form-select btn-sm">
+                <option value="start">Démarrer</option>
+                <option value="stop">Arrêter</option>
+                <option value="restart">Redémarrer</option>
+                <option value="redeploy">Relancer le déploiement</option>
+                <option value="delete">Supprimer</option>
+            </select>
+            <button type="button" id="bulk-apply-btn" class="btn btn-primary btn-sm">Appliquer</button>
+        </div>
+    </div>
+
+    <!-- Hidden form for bulk actions -->
+    <form id="bulk-hidden-form" action="{{ path('app_site_bulk_action') }}" method="POST" style="display:none">
+        <div id="bulk-hidden-ids"></div>
+        <input type="hidden" name="action" id="bulk-hidden-action">
+    </form>
+
+    <div class="table-card">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title">Tous les sites</span>
+                <span class="table-count">{{ totalSites }} entrées</span>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="direction" value="{{ direction }}">
+                    <select name="limit" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                        <option value="250" {% if limit == 250 %}selected{% endif %}>250</option>
+                    </select>
+                    <span>sur {{ totalSites }}</span>
+                </form>
+            </div>
+        </div>
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th style="width: 40px; padding-left: 24px;">
+                        <input type="checkbox" id="select-all" style="width: 16px; height: 16px; cursor: pointer;">
+                    </th>
+                    {% set nextDir = direction == 'ASC' ? 'DESC' : 'ASC' %}
+                    <th><a href="{{ path('app_site_index', {sort: 'id', direction: sort == 'id' ? nextDir : 'DESC', limit: limit}) }}" style="color:inherit">ID {% if sort == 'id' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
+                    <th><a href="{{ path('app_site_index', {sort: 'name', direction: sort == 'name' ? nextDir : 'ASC', limit: limit}) }}" style="color:inherit">Projet {% if sort == 'name' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
+                    <th>URL</th>
+                    <th><a href="{{ path('app_site_index', {sort: 'type', direction: sort == 'type' ? nextDir : 'ASC', limit: limit}) }}" style="color:inherit">Type {% if sort == 'type' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
+                    <th><a href="{{ path('app_site_index', {sort: 'status', direction: sort == 'status' ? nextDir : 'ASC', limit: limit}) }}" style="color:inherit">État {% if sort == 'status' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
+                    <th>Git</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for site in sites %}
+                <tr class="site-row" data-id="{{ site.id }}" data-status="{{ site.status }}" data-uuid="{{ site.coolifyUuid ? 'yes' : 'no' }}">
+                    <td style="padding-left: 24px;">
+                        <input type="checkbox" name="ids[]" value="{{ site.id }}" class="site-select" style="width: 16px; height: 16px; cursor: pointer;">
+                    </td>
+                    <td style="color: var(--text-2); font-size: 12.5px; font-weight: 600;">#{{ site.id }}</td>
+                    <td>
+                        <div class="cell-name">{{ site.name }}</div>
+                    </td>
+                    <td>
+                        <a href="https://{{ site.getFullUrl(base_domain) }}" target="_blank" class="domain-link">
+                            {{ site.getFullUrl(base_domain) }}<i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </td>
+                    <td><span class="badge badge-type">{{ site.type }}</span></td>
+                    <td class="status-cell">
+                        {% if site.status == 'running' %}
+                            <span class="badge badge-running"><span class="badge-dot"></span>Running</span>
+                        {% elseif site.status == 'building' or site.status == 'starting' or site.status == 'restarting' %}
+                            <span class="badge badge-starting"><span class="badge-dot"></span>Starting...</span>
+                        {% elseif site.status == 'stopping' %}
+                            <span class="badge badge-stopping"><span class="badge-dot"></span>Stopping...</span>
+                        {% elseif site.status == 'failed' %}
+                            <span class="badge badge-failed"><span class="badge-dot"></span>Failed</span>
+                        {% else %}
+                            <span class="badge badge-stopped"><span class="badge-dot"></span>Stopped</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if site.gitRepository %}
+                            <a href="{{ site.gitRepository }}" target="_blank" title="{{ site.gitRepository }}" style="color:var(--text-2)">
+                                <i class="bi bi-git"></i>
+                            </a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        <div class="actions-row">
+                            {% if site.status == 'running' %}
+                                <a href="{{ path('app_site_restart', {'id': site.id}) }}" class="btn btn-secondary btn-sm js-control-btn" title="Redémarrer" style="color: var(--orange); border-color: var(--orange)">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                                <a href="{{ path('app_site_stop', {'id': site.id}) }}" class="btn btn-secondary btn-sm js-control-btn" title="Arrêter" style="color: var(--red); border-color: var(--red)">
+                                    <i class="bi bi-stop-fill"></i>
+                                </a>
+                            {% elseif site.status == 'failed' %}
+                                <a href="{{ path('app_site_redeploy', {'id': site.id}) }}" class="btn btn-primary btn-sm js-control-btn" title="Relancer le déploiement">
+                                    <i class="bi bi-arrow-repeat"></i>Relancer le déploiement
+                                </a>
+                            {% elseif site.status == 'building' or site.status == 'starting' or site.status == 'restarting' or site.status == 'stopping' %}
+                                <button class="btn btn-secondary btn-sm disabled" title="Traitement en cours...">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                </button>
+                            {% else %}
+                                <a href="{{ path('app_site_start', {'id': site.id}) }}" class="btn btn-secondary btn-sm js-control-btn" title="Démarrer" style="color: var(--green); border-color: var(--green)">
+                                    <i class="bi bi-play-fill"></i>
+                                </a>
+                            {% endif %}
+                            <a href="{{ path('app_site_show', {'id': site.id}) }}" class="btn btn-ghost btn-sm" title="Voir">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-secondary btn-sm" title="Éditer">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr class="table-empty-row">
+                    <td colspan="8">
+                        <i class="bi bi-hdd-rack empty-icon"></i>
+                        <div class="empty-title">Aucun site enregistré</div>
+                        <div class="empty-hint">Commencez par créer un nouveau site.</div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="table-ft" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1">
+                <form method="get" class="limit-form" style="display: flex; align-items: center; gap: 5px;">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="direction" value="{{ direction }}">
+                    <select name="limit" class="form-select btn-sm limit-select" onchange="this.form.submit()" style="width:auto">
+                        <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                        <option value="250" {% if limit == 250 %}selected{% endif %}>250</option>
+                    </select>
+                    <span>sur {{ totalSites }}</span>
+                </form>
+            </div>
+
+            {% if totalPages > 1 %}
+            <div style="display: flex; gap: 8px">
+                {% if currentPage > 1 %}
+                    <a href="{{ path('app_site_index', {page: currentPage - 1, limit: limit, sort: sort, direction: direction}) }}" class="btn btn-secondary btn-sm"><i class="bi bi-chevron-left"></i> Précédent</a>
+                {% endif %}
+
+                <span class="btn btn-ghost btn-sm disabled" style="color: var(--text-2)">Page {{ currentPage }} sur {{ totalPages }}</span>
+
+                {% if currentPage < totalPages %}
+                    <a href="{{ path('app_site_index', {page: currentPage + 1, limit: limit, sort: sort, direction: direction}) }}" class="btn btn-secondary btn-sm">Suivant <i class="bi bi-chevron-right"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div style="flex: 1"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const bulkToolbar = document.getElementById('bulk-toolbar');
+        const selectedCountEl = document.getElementById('selected-count');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const siteCheckboxes = document.querySelectorAll('.site-select');
+
+        const transitionStatuses = ['building', 'starting', 'stopping', 'restarting'];
+        const actionStartTimes = {};
+
+        // --- Helpers de rendu ---
+        function renderActionButtons(siteId, status) {
+            const startUrl = `{{ path('app_site_start', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+            const stopUrl = `{{ path('app_site_stop', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+            const restartUrl = `{{ path('app_site_restart', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+            const redeployUrl = `{{ path('app_site_redeploy', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+            const showUrl = `{{ path('app_site_show', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+            const editUrl = `{{ path('app_site_edit', {id: 'SITE_ID'}) }}`.replace('SITE_ID', siteId);
+
+            let buttons = '';
+            if (status === 'running') {
+                buttons = `
+                    <a href="${restartUrl}" class="btn btn-secondary btn-sm js-control-btn" title="Redémarrer" style="color: var(--orange); border-color: var(--orange)">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                    <a href="${stopUrl}" class="btn btn-secondary btn-sm js-control-btn" title="Arrêter" style="color: var(--red); border-color: var(--red)">
+                        <i class="bi bi-stop-fill"></i>
+                    </a>
+                `;
+            } else if (status === 'failed') {
+                buttons = `
+                    <a href="${redeployUrl}" class="btn btn-primary btn-sm js-control-btn" title="Relancer le déploiement">
+                        <i class="bi bi-arrow-repeat"></i>Relancer le déploiement
+                    </a>
+                `;
+            } else if (transitionStatuses.includes(status)) {
+                buttons = `
+                    <button class="btn btn-secondary btn-sm disabled" title="Traitement en cours...">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
+                `;
+            } else {
+                buttons = `
+                    <a href="${startUrl}" class="btn btn-secondary btn-sm js-control-btn" title="Démarrer" style="color: var(--green); border-color: var(--green)">
+                        <i class="bi bi-play-fill"></i>
+                    </a>
+                `;
+            }
+
+            return `
+                <div class="actions-row">
+                    ${buttons}
+                    <a href="${showUrl}" class="btn btn-ghost btn-sm" title="Voir">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="${editUrl}" class="btn btn-secondary btn-sm" title="Éditer">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            `;
+        }
+
+        // --- 1. Gestion de la sélection de masse ---
+        const updateBulkToolbar = () => {
+            const selected = document.querySelectorAll('.site-select:checked');
+            selectedCountEl.textContent = selected.length;
+            if (selected.length > 0) {
+                bulkToolbar.classList.add('active');
+            } else {
+                bulkToolbar.classList.remove('active');
+            }
+        };
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', () => {
+                siteCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+                updateBulkToolbar();
+            });
+        }
+
+        siteCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateBulkToolbar);
+        });
+
+        // Soumission des actions de masse
+        const bulkApplyBtn = document.getElementById('bulk-apply-btn');
+        const bulkActionSelect = document.getElementById('bulk-action-select');
+
+        if (bulkApplyBtn) {
+            bulkApplyBtn.addEventListener('click', () => {
+                const selected = document.querySelectorAll('.site-select:checked');
+                if (selected.length === 0) return;
+
+                const action = bulkActionSelect.value;
+                if (action === 'delete' && !confirm(`Supprimer définitivement ${selected.length} sites ?`)) {
+                    return;
+                }
+
+                const ids = Array.from(selected).map(cb => cb.value);
+                const formData = new FormData();
+                ids.forEach(id => formData.append('ids[]', id));
+                formData.append('action', action);
+
+                bulkApplyBtn.disabled = true;
+                bulkApplyBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('{{ path('app_site_bulk_action') }}', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Action groupée', data.message);
+                        if (action === 'delete') {
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            bulkToolbar.classList.remove('active');
+                            siteCheckboxes.forEach(cb => cb.checked = false);
+                            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                            bulkApplyBtn.disabled = false;
+                            bulkApplyBtn.innerHTML = 'Appliquer';
+
+                            ids.forEach(id => {
+                                const row = document.querySelector(`.site-row[data-id="${id}"]`);
+                                if (row) {
+                                    const nextStatus = (action === 'stop' ? 'stopping' : (action === 'start' ? 'starting' : (action === 'redeploy' ? 'building' : 'restarting')));
+                                    row.dataset.status = nextStatus;
+                                    row.querySelector('.actions-cell').innerHTML = renderActionButtons(id, nextStatus);
+                                    actionStartTimes[id] = Date.now();
+                                }
+                            });
+                            checkStatuses();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Bulk action failed:', error);
+                    window.location.reload();
+                });
+            });
+        }
+
+        // --- 2. Polling permanent ---
+        function checkStatuses() {
+            const siteRows = document.querySelectorAll('.site-row[data-uuid="yes"]');
+            const ids = Array.from(siteRows).map(row => parseInt(row.dataset.id));
+
+            if (ids.length === 0) return;
+
+            const now = Date.now();
+
+            fetch('{{ path('api_sites_check_status') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.sites) return;
+
+                data.sites.forEach(site => {
+                    const row = document.querySelector(`.site-row[data-id="${site.id}"]`);
+                    if (!row) return;
+
+                    const oldStatus = row.dataset.status;
+
+                    if (transitionStatuses.includes(oldStatus)) {
+                        if (!actionStartTimes[site.id]) actionStartTimes[site.id] = now;
+                        if (now - actionStartTimes[site.id] > 600000) {
+                            const siteName = row.querySelector('.cell-name').textContent;
+                            showToast('Timeout', `L'action sur <strong>${siteName}</strong> a pris trop de temps.`, 'error');
+                            delete actionStartTimes[site.id];
+                        }
+                    }
+
+                    const statusCell = row.querySelector('.status-cell');
+                    const isSyncing = statusCell && statusCell.innerHTML.includes('badge-sync');
+
+                    if (oldStatus !== site.status || isSyncing) {
+                        row.dataset.status = site.status;
+                        if (site.is_finished) delete actionStartTimes[site.id];
+
+                        let badgeClass = 'badge-stopped';
+                        if (site.status === 'running') badgeClass = 'badge-running';
+                        if (site.status === 'failed') badgeClass = 'badge-failed';
+                        if (site.status === 'stopping') badgeClass = 'badge-stopping';
+                        if (transitionStatuses.includes(site.status) && site.status !== 'stopping') badgeClass = 'badge-starting';
+
+                        statusCell.innerHTML = `<span class="badge ${badgeClass}"><span class="badge-dot"></span>${site.status.charAt(0).toUpperCase() + site.status.slice(1)}</span>`;
+
+                        const actionsCell = row.querySelector('.actions-cell');
+                        if (actionsCell) {
+                            actionsCell.innerHTML = renderActionButtons(site.id, site.status);
+                        }
+
+                        if (transitionStatuses.includes(oldStatus) && site.is_finished && !isSyncing) {
+                            const siteName = row.querySelector('.cell-name').textContent;
+                            let msg = `Le site <strong>${siteName}</strong> est désormais en ligne.`;
+                            if (site.status === 'stopped') msg = `Le site <strong>${siteName}</strong> a été arrêté.`;
+                            if (site.status === 'failed') msg = `Échec de l'action sur <strong>${siteName}</strong>.`;
+                            showToast('Mise à jour', msg, site.status === 'failed' ? 'error' : 'success');
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Status check failed:', error));
+        }
+
+        // --- 3. Gestion des boutons de contrôle (AJAX) ---
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.js-control-btn');
+            if (!btn) return;
+
+            e.preventDefault();
+            const row = btn.closest('.site-row');
+            if (!row) return;
+
+            const siteId = parseInt(row.dataset.id);
+            const url = btn.href;
+
+            const actionsCell = row.querySelector('.actions-cell');
+            const statusCell = row.querySelector('.status-cell');
+
+            actionsCell.innerHTML = renderActionButtons(siteId, 'starting');
+            statusCell.innerHTML = `<span class="badge badge-starting"><span class="badge-dot"></span>Traitement...</span>`;
+            actionStartTimes[siteId] = Date.now();
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Action envoyée', data.message || 'L\'opération a été transmise.');
+                    setTimeout(checkStatuses, 1000);
+                } else {
+                    showToast('Erreur', 'Erreur lors de l\'envoi.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('AJAX Action failed:', error);
+                showToast('Erreur réseau', 'Impossible de joindre le serveur.', 'error');
+            });
+        });
+
+        // Indicateur visuel immédiat : Sync...
+        document.querySelectorAll('.site-row[data-uuid="yes"]').forEach(row => {
+            const statusCell = row.querySelector('.status-cell');
+            const actionsCell = row.querySelector('.actions-cell');
+            if (statusCell) {
+                statusCell.innerHTML = `<span class="badge badge-sync"><span class="spinner-border spinner-border-sm" style="width:10px; height:10px; margin-right:5px"></span>Sync...</span>`;
+            }
+            if (actionsCell) {
+                actionsCell.innerHTML = `
+                    <div class="actions-row">
+                        <button class="btn btn-secondary btn-sm disabled" title="Synchronisation...">
+                            <span class="spinner-border spinner-border-sm"></span>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        checkStatuses();
+        setInterval(checkStatuses, 5000);
+    });
+</script>
+{% endblock %}

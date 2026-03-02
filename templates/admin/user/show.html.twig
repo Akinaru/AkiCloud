@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ user.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <a href="{{ path('admin_user_index') }}" class="bc-item">Utilisateurs</a>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">{{ user.fullName }}</span>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_user_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Retour aux utilisateurs
+    </a>
+
+    <div class="detail-layout">
+        <div class="detail-sidebar">
+            <div class="detail-card">
+                <div class="detail-hero">
+                    <div class="detail-site-icon">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <div class="detail-site-name">{{ user.fullName }}</div>
+                        <div class="detail-site-url">{{ user.email }}</div>
+                    </div>
+                </div>
+                <div class="info-rows">
+                    <div class="info-row">
+                        <span class="info-lbl">Rôle</span>
+                        <span class="info-val">
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="badge badge-running"><span class="badge-dot"></span>Admin</span>
+                            {% else %}
+                                <span class="badge badge-type">User</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Inscrit le</span>
+                        <span class="info-val">{{ user.createdAt|date('d/m/Y H:i') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Dernière connexion</span>
+                        <span class="info-val">
+                            {% set lastLogin = loginAttemptRepo.findLastSuccessfulAttemptForUser(user.email) %}
+                            {% if lastLogin %}{{ lastLogin.attemptedAt|date('d/m/Y H:i') }}{% else %}Jamais{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-actions-card">
+                <div class="detail-act-title">Actions</div>
+                <div class="detail-act-list">
+                    <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-secondary" style="width:100%;justify-content:center">
+                        <i class="bi bi-pencil"></i>Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="detail-main-card">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title">Informations du compte</div>
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Prénom</span>
+                            <span class="detail-prop-val">{{ user.firstName }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Nom</span>
+                            <span class="detail-prop-val">{{ user.lastName }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Email</span>
+                            <span class="detail-prop-val">{{ user.email }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">ID</span>
+                            <span class="detail-prop-val">#{{ user.id }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="danger-zone">
+                <div class="danger-zone-hd">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span class="danger-zone-title">Zone dangereuse</span>
+                </div>
+                <div class="danger-zone-body">
+                    <div class="danger-desc">
+                        La suppression d'un utilisateur est <strong>irréversible</strong>. Toutes ses données seront perdues.
+                    </div>
+                    {{ include('admin/user/_delete_form.html.twig') }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

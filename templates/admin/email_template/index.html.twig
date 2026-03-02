@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modèles d'emails{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Modèles d'emails</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Modèles d'emails</h1>
+            <p class="page-sub">Gérez les messages envoyés aux étudiants lors de la création de leurs sites.</p>
+        </div>
+        <div style="display:flex;gap:8px">
+            <a href="{{ path('admin_email_template_new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i>Nouveau modèle
+            </a>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Sujet</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for email_template in email_templates %}
+                    <tr>
+                        <td><strong>{{ email_template.name }}</strong></td>
+                        <td style="color: var(--text-2)">{{ email_template.subject }}</td>
+                        <td>
+                            <div class="actions-row">
+                                <a href="{{ path('admin_email_template_edit', {'id': email_template.id}) }}" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-pencil"></i>Éditer
+                                </a>
+                                <form method="post" action="{{ path('admin_email_template_delete', {'id': email_template.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce modèle ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ email_template.id) }}">
+                                    <button class="btn btn-ghost btn-sm" style="color: var(--red)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr class="table-empty-row">
+                        <td colspan="3">
+                            <i class="bi bi-envelope-paper empty-icon"></i>
+                            <div class="empty-title">Aucun modèle d'email</div>
+                            <div class="empty-hint">Créez votre premier modèle pour notifier les utilisateurs.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

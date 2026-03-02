@@ -1,0 +1,639 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ site.name }}{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <a href="{{ path('app_site_index') }}" class="bc-item" style="text-decoration:none">Sites</a>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">{{ site.name }}</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .badge-building, .badge-starting, .badge-restarting {
+        background: #e6f0ff;
+        color: var(--blue);
+    }
+    .badge-building .badge-dot, .badge-starting .badge-dot, .badge-restarting .badge-dot {
+        background: var(--blue);
+        animation: pulse 2s infinite;
+    }
+    .badge-stopping {
+        background: #fff0e6;
+        color: #e67700;
+    }
+    .badge-stopping .badge-dot {
+        background: #e67700;
+        animation: pulse 2s infinite;
+    }
+    .badge-sync {
+        background: #f0f2f5;
+        color: var(--text-2);
+    }
+
+    .db-pass-wrap { display: flex; align-items: center; gap: 10px; }
+    .db-pass-wrap input { width: 200px; font-family: monospace; background: #f8f9fd; }
+    .db-pass-acts { display: flex; gap: 6px; }
+
+    @media (max-width: 640px) {
+        .db-pass-wrap { flex-direction: column; align-items: stretch; }
+        .db-pass-wrap input { width: 100%; }
+        .db-pass-acts { justify-content: flex-end; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('app_site_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Retour aux sites
+    </a>
+
+    <div class="page-hd">
+        <div>
+            <div class="page-title">{{ site.name }}</div>
+            <div class="page-sub">Détails et gestion de l'instance.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+            <a href="https://{{ site.getFullUrl(base_domain) }}" target="_blank" class="btn btn-secondary">
+                <i class="bi bi-box-arrow-up-right"></i>Voir le site
+            </a>
+            <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-secondary">
+                <i class="bi bi-pencil"></i>Éditer
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-layout">
+        <!-- Sidebar info -->
+        <div class="detail-sidebar">
+            <div class="detail-card">
+                <div class="detail-hero">
+                    <div class="detail-site-icon"><i class="bi bi-globe2"></i></div>
+                    <div>
+                        <div class="detail-site-name">{{ site.name }}</div>
+                        <div class="detail-site-url">{{ site.getFullUrl(base_domain) }}</div>
+                    </div>
+                </div>
+                <div class="info-rows">
+                    <div class="info-row">
+                        <span class="info-lbl">État</span>
+                        <span>
+                            {% if site.status == 'running' %}
+                                <span class="badge badge-running"><span class="badge-dot"></span>Running</span>
+                            {% elseif site.status == 'building' or site.status == 'starting' or site.status == 'restarting' %}
+                                <span class="badge badge-starting"><span class="badge-dot"></span>Starting...</span>
+                            {% elseif site.status == 'stopping' %}
+                                <span class="badge badge-stopping"><span class="badge-dot"></span>Stopping...</span>
+                            {% elseif site.status == 'failed' %}
+                                <span class="badge badge-failed"><span class="badge-dot"></span>Failed</span>
+                            {% else %}
+                                <span class="badge badge-stopped"><span class="badge-dot"></span>Stopped</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Sous-domaine</span>
+                        <span class="info-val">{{ site.subdomain }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Type</span>
+                        <span class="badge badge-type">{{ site.type }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Port</span>
+                        <span class="port-mono">:{{ site.port }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">ID</span>
+                        <span class="info-val">#{{ site.id }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if site.ownerEmail %}
+            <div class="detail-card" style="margin-top: 20px;">
+                <div style="font-weight: 700; font-size: 13px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; padding: 20px 22px 0 22px;">
+                    <i class="bi bi-person-badge" style="color: var(--blue)"></i>Propriétaire
+                </div>
+                <div class="info-rows">
+                    <div class="info-row">
+                        <span class="info-lbl">Nom</span>
+                        <span class="info-val">{{ site.ownerFirstname }} {{ site.ownerLastname }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Email</span>
+                        <span class="info-val" style="font-size: 12px;">{{ site.ownerEmail }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="detail-actions-card">
+                <div class="detail-act-title">Contrôle de l'instance</div>
+                <div class="detail-act-list" style="margin-bottom: 20px;">
+                    {% if site.status == 'running' %}
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <a href="{{ path('app_site_restart', {'id': site.id}) }}" class="btn btn-secondary js-control-btn" style="color: var(--orange); border-color: var(--orange)">
+                                <i class="bi bi-arrow-clockwise"></i>Redémarrer
+                            </a>
+                            <a href="{{ path('app_site_stop', {'id': site.id}) }}" class="btn btn-secondary js-control-btn" style="color: var(--red); border-color: var(--red)">
+                                <i class="bi bi-stop-fill"></i>Arrêter
+                            </a>
+                        </div>
+                    {% elseif site.status == 'failed' %}
+                        <a href="{{ path('app_site_redeploy', {'id': site.id}) }}" class="btn btn-primary js-control-btn" style="width:100%;justify-content:center">
+                            <i class="bi bi-arrow-repeat"></i>Relancer le déploiement
+                        </a>
+                    {% elseif site.status == 'building' or site.status == 'starting' or site.status == 'restarting' or site.status == 'stopping' %}
+                        <button class="btn btn-secondary disabled" style="width:100%;justify-content:center">
+                            <span class="spinner-border spinner-border-sm" style="margin-right: 8px;"></span>Traitement en cours...
+                        </button>
+                    {% else %}
+                        <a href="{{ path('app_site_start', {'id': site.id}) }}" class="btn btn-secondary js-control-btn" style="width:100%;justify-content:center; color: var(--green); border-color: var(--green)">
+                            <i class="bi bi-play-fill"></i>Démarrer l'instance
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="detail-act-title">Actions rapides</div>
+                <div class="detail-act-list">
+                    <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-secondary" style="width:100%;justify-content:center">
+                        <i class="bi bi-pencil"></i>Modifier les informations
+                    </a>
+                    <a href="https://{{ site.getFullUrl(base_domain) }}" target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center">
+                        <i class="bi bi-box-arrow-up-right"></i>Ouvrir le site
+                    </a>
+                    {% if site.gitRepository %}
+                    <a href="{{ site.gitRepository }}" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:center">
+                        <i class="bi bi-git"></i>Voir le dépôt
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="document.getElementById('modal-delete').classList.add('open')">
+                        <i class="bi bi-trash3"></i>Supprimer le site
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div>
+            <div class="detail-main-card">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title">Informations du site</div>
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Nom du projet</span>
+                            <span class="detail-prop-val">{{ site.name }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">URL complète</span>
+                            <span class="detail-prop-val" style="font-size:13px;word-break:break-all">{{ site.getFullUrl(base_domain) }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Dépôt Git</span>
+                            <span class="detail-prop-val" style="font-size:12px">{{ site.gitRepository ?? 'Aucun' }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Type de stack</span>
+                            <span class="detail-prop-val">{{ site.type }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Statut</span>
+                            <span class="detail-prop-val">
+                                {% if site.status == 'running' %}En ligne
+                                {% elseif site.status == 'building' %}En construction
+                                {% elseif site.status == 'failed' %}Échec
+                                {% else %}Arrêté
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Port exposé</span>
+                            <span class="detail-prop-val" style="font-family:monospace">{{ site.port ?? '—' }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Identifiant</span>
+                            <span class="detail-prop-val">#{{ site.id }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if site.type == 'wordpress' and site.dbName %}
+            <div class="detail-main-card" style="margin-top: 24px;">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title"><i class="bi bi-database-fill" style="margin-right: 8px; color: var(--blue);"></i>Base de données WordPress</div>
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Hôte (DB_HOST)</span>
+                            <span class="detail-prop-val" style="font-family: monospace;">{{ site.dbHost }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Nom de base (DB_NAME)</span>
+                            <span class="detail-prop-val" style="font-family: monospace;">{{ site.dbName }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Utilisateur (DB_USER)</span>
+                            <span class="detail-prop-val" style="font-family: monospace;">{{ site.dbUser }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Mot de passe (DB_PASSWORD)</span>
+                            <div class="db-pass-wrap">
+                                <input type="password" value="{{ site.dbPassword }}" readonly class="form-control btn-sm" id="db-pass-input">
+                                <div class="db-pass-acts">
+                                    <button class="btn btn-secondary btn-sm" onclick="const input = document.getElementById('db-pass-input'); input.type = input.type === 'password' ? 'text' : 'password'; this.innerHTML = input.type === 'password' ? '<i class=&quot;bi bi-eye&quot;></i>' : '<i class=&quot;bi bi-eye-slash&quot;></i>';">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('{{ site.dbPassword }}'); showToast('Copié', 'Mot de passe copié dans le presse-papier')">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-box" style="margin-top: 20px;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Ces informations ont été automatiquement configurées dans votre instance WordPress.</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if site.type == 'wordpress' and site.wpAdminUser %}
+            <div class="detail-main-card" style="margin-top: 24px;">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title"><i class="bi bi-person-fill-gear" style="margin-right: 8px; color: var(--blue);"></i>Compte administrateur WordPress</div>
+                    {% if site.wpConfigured %}
+                        <span class="badge badge-running" style="font-size: 11px;"><span class="badge-dot"></span>Configuré</span>
+                    {% else %}
+                        <span class="badge badge-starting" style="font-size: 11px;"><span class="badge-dot"></span>En attente</span>
+                    {% endif %}
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Identifiant</span>
+                            <span class="detail-prop-val" style="font-family: monospace;">{{ site.wpAdminUser }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Email admin</span>
+                            <span class="detail-prop-val" style="font-size: 12px;">{{ site.wpAdminEmail }}</span>
+                        </div>
+                        <div class="detail-prop" style="grid-column: 1 / -1;">
+                            <span class="detail-prop-lbl">Mot de passe</span>
+                            <div class="db-pass-wrap">
+                                <input type="password" value="{{ site.wpAdminPassword }}" readonly class="form-control btn-sm" id="wp-pass-input">
+                                <div class="db-pass-acts">
+                                    <button class="btn btn-secondary btn-sm" onclick="const input = document.getElementById('wp-pass-input'); input.type = input.type === 'password' ? 'text' : 'password'; this.innerHTML = input.type === 'password' ? '<i class=&quot;bi bi-eye&quot;></i>' : '<i class=&quot;bi bi-eye-slash&quot;></i>';">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="const val = document.getElementById('wp-pass-input').value; navigator.clipboard.writeText(val); showToast('Copié', 'Mot de passe copié dans le presse-papier')">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="btn-wp-change-pass" title="Modifier le mot de passe">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire de changement de mot de passe (masqué) -->
+                    <div id="wp-change-pass-form" style="display: none; margin-top: 16px; padding: 16px; background: #f8f9fd; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">Nouveau mot de passe WordPress</div>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="wp-new-pass-input" class="form-control btn-sm" placeholder="Nouveau mot de passe" style="flex: 1; font-family: monospace;">
+                            <button class="btn btn-primary btn-sm" id="btn-wp-save-pass">
+                                <i class="bi bi-check-lg"></i>Enregistrer
+                            </button>
+                            <button class="btn btn-ghost btn-sm" id="btn-wp-cancel-pass">Annuler</button>
+                        </div>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Ces identifiants permettent d'accéder au panneau d'administration WordPress (<code>/wp-admin</code>).</span>
+                    </div>
+
+                    <div class="info-box warning" style="margin-top: 10px; background: #fff9db; border-color: #fab005; color: #856404; display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 6px; border: 1px solid; font-size: 13px;">
+                        <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
+                        <span><strong>Note :</strong> Si vous modifiez le mot de passe directement depuis WordPress, il ne sera pas mis à jour ici. Privilégiez cette interface pour garder les informations synchronisées.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-main-card" style="margin-top: 24px;">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title"><i class="bi bi-shield-lock-fill" style="margin-right: 8px; color: var(--blue);"></i>Compte technique USMB</div>
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Identifiant technique</span>
+                            <span class="detail-prop-val" style="font-family: monospace;">{{ site.wpUsmbAdminUser ?? 'usmb' }}</span>
+                        </div>
+                        <div class="detail-prop" style="grid-column: 1 / -1;">
+                            <span class="detail-prop-lbl">Mot de passe technique</span>
+                            <div class="db-pass-wrap">
+                                <input type="password" value="{{ site.wpUsmbAdminPassword }}" readonly class="form-control btn-sm" id="usmb-pass-input">
+                                <div class="db-pass-acts">
+                                    <button class="btn btn-secondary btn-sm" onclick="const input = document.getElementById('usmb-pass-input'); input.type = input.type === 'password' ? 'text' : 'password'; this.innerHTML = input.type === 'password' ? '<i class=&quot;bi bi-eye&quot;></i>' : '<i class=&quot;bi bi-eye-slash&quot;></i>';">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="const val = document.getElementById('usmb-pass-input').value; navigator.clipboard.writeText(val); showToast('Copié', 'Mot de passe copié dans le presse-papier')">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="btn-usmb-change-pass" title="Modifier le mot de passe technique">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire de changement de mot de passe USMB (masqué) -->
+                    <div id="usmb-change-pass-form" style="display: none; margin-top: 16px; padding: 16px; background: #f8f9fd; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">Nouveau mot de passe technique</div>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="usmb-new-pass-input" class="form-control btn-sm" placeholder="Nouveau mot de passe" style="flex: 1; font-family: monospace;">
+                            <button class="btn btn-primary btn-sm" id="btn-usmb-save-pass">
+                                <i class="bi bi-check-lg"></i>Enregistrer
+                            </button>
+                            <button class="btn btn-ghost btn-sm" id="btn-usmb-cancel-pass">Annuler</button>
+                        </div>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Ce compte permet à l'équipe technique de l'USMB d'intervenir sur le site si nécessaire. Ne pas supprimer ce compte de WordPress.</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Delete modal -->
+    <div class="modal-bg" id="modal-delete">
+        <div class="modal-box">
+            <div class="modal-ico"><i class="bi bi-trash3-fill"></i></div>
+            <div class="modal-title">Supprimer ce site ?</div>
+            <p class="modal-desc">
+                Vous êtes sur le point de supprimer définitivement le site
+                <strong>{{ site.name }}</strong>. Cette action est irréversible.
+            </p>
+            <div class="modal-acts">
+                <button class="btn btn-secondary" onclick="document.getElementById('modal-delete').classList.remove('open')">
+                    Annuler
+                </button>
+                {{ include('site/_delete_form.html.twig') }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const siteId = {{ site.id }};
+        const siteUuid = "{{ site.coolifyUuid }}";
+        const transitionStatuses = ['building', 'starting', 'stopping', 'restarting'];
+        let currentStatus = "{{ site.status }}";
+
+        function renderControlCard(status) {
+            const startUrl = `{{ path('app_site_start', {id: site.id}) }}`;
+            const stopUrl = `{{ path('app_site_stop', {id: site.id}) }}`;
+            const restartUrl = `{{ path('app_site_restart', {id: site.id}) }}`;
+            const redeployUrl = `{{ path('app_site_redeploy', {id: site.id}) }}`;
+
+            if (status === 'running') {
+                return `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <a href="${restartUrl}" class="btn btn-secondary js-control-btn" style="color: var(--orange); border-color: var(--orange)">
+                            <i class="bi bi-arrow-clockwise"></i>Redémarrer
+                        </a>
+                        <a href="${stopUrl}" class="btn btn-secondary js-control-btn" style="color: var(--red); border-color: var(--red)">
+                            <i class="bi bi-stop-fill"></i>Arrêter
+                        </a>
+                    </div>
+                `;
+            } else if (status === 'failed') {
+                return `
+                    <a href="${redeployUrl}" class="btn btn-primary js-control-btn" style="width:100%;justify-content:center">
+                        <i class="bi bi-arrow-repeat"></i>Relancer le déploiement
+                    </a>
+                `;
+            } else if (transitionStatuses.includes(status)) {
+                return `
+                    <button class="btn btn-secondary disabled" style="width:100%;justify-content:center">
+                        <span class="spinner-border spinner-border-sm" style="margin-right: 8px;"></span>Traitement en cours...
+                    </button>
+                `;
+            } else {
+                return `
+                    <a href="${startUrl}" class="btn btn-secondary js-control-btn" style="width:100%;justify-content:center; color: var(--green); border-color: var(--green)">
+                        <i class="bi bi-play-fill"></i>Démarrer l'instance
+                    </a>
+                `;
+            }
+        }
+
+        function updateUI(status) {
+            // Update Badge in sidebar
+            const badgeContainer = document.querySelector('.info-row span .badge').parentElement;
+            let badgeClass = 'badge-stopped';
+            if (status === 'running') badgeClass = 'badge-running';
+            if (status === 'failed') badgeClass = 'badge-failed';
+            if (status === 'stopping') badgeClass = 'badge-stopping';
+            if (transitionStatuses.includes(status) && status !== 'stopping') badgeClass = 'badge-starting';
+
+            badgeContainer.innerHTML = `<span class="badge ${badgeClass}"><span class="badge-dot"></span>${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+
+            // Update Control Card
+            document.querySelector('.detail-act-list').innerHTML = renderControlCard(status);
+
+            // Update Info Grid
+            const statusVal = document.querySelector('.detail-prop:nth-child(5) .detail-prop-val');
+            if (statusVal) {
+                const labels = { 'running': 'En ligne', 'building': 'En construction', 'failed': 'Échec' };
+                statusVal.textContent = labels[status] || 'Arrêté';
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.js-control-btn');
+            if (!btn) return;
+
+            e.preventDefault();
+            const url = btn.href;
+
+            // Feedback immédiat
+            document.querySelector('.detail-act-list').innerHTML = renderControlCard('building');
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Action envoyée', data.message);
+                    checkStatus();
+                }
+            })
+            .catch(error => console.error('Action failed:', error));
+        });
+
+        function checkStatus() {
+            fetch('{{ path('api_sites_check_status') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [siteId] })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const site = data.sites[0];
+                if (site) {
+                    const statusChanged = site.status !== currentStatus;
+                    const isSyncing = document.querySelector('.badge-sync') !== null;
+
+                    if (statusChanged || isSyncing) {
+                        const oldStatus = currentStatus;
+                        currentStatus = site.status;
+                        updateUI(site.status);
+
+                        if (statusChanged && transitionStatuses.includes(oldStatus) && site.is_finished) {
+                            showToast('Mise à jour', `L'état du site est désormais : ${site.status.charAt(0).toUpperCase() + site.status.slice(1)}`);
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Status check failed:', error));
+        }
+
+        // WP password change
+        const btnChangePass = document.getElementById('btn-wp-change-pass');
+        const changePassForm = document.getElementById('wp-change-pass-form');
+        const btnSavePass = document.getElementById('btn-wp-save-pass');
+        const btnCancelPass = document.getElementById('btn-wp-cancel-pass');
+        const newPassInput = document.getElementById('wp-new-pass-input');
+
+        if (btnChangePass && changePassForm) {
+            btnChangePass.addEventListener('click', () => {
+                changePassForm.style.display = changePassForm.style.display === 'none' ? 'block' : 'none';
+                if (changePassForm.style.display === 'block') newPassInput.focus();
+            });
+
+            btnCancelPass.addEventListener('click', () => {
+                changePassForm.style.display = 'none';
+                newPassInput.value = '';
+            });
+
+            btnSavePass.addEventListener('click', () => {
+                const newPass = newPassInput.value.trim();
+                if (!newPass) {
+                    showToast('Erreur', 'Veuillez saisir un mot de passe.', 'error');
+                    return;
+                }
+
+                btnSavePass.disabled = true;
+                btnSavePass.innerHTML = '<span class="spinner-border spinner-border-sm" style="margin-right:4px;"></span>...';
+
+                fetch(`{{ path('app_site_wp_change_password', {id: site.id}) }}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPass })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Succès', data.message);
+                        document.getElementById('wp-pass-input').value = newPass;
+                        changePassForm.style.display = 'none';
+                        newPassInput.value = '';
+                    } else {
+                        showToast('Erreur', data.message, 'error');
+                    }
+                })
+                .catch(() => showToast('Erreur', 'Une erreur est survenue.', 'error'))
+                .finally(() => {
+                    btnSavePass.disabled = false;
+                    btnSavePass.innerHTML = '<i class="bi bi-check-lg"></i>Enregistrer';
+                });
+            });
+        }
+
+        // USMB password change
+        const btnChangePassUsmb = document.getElementById('btn-usmb-change-pass');
+        const changePassFormUsmb = document.getElementById('usmb-change-pass-form');
+        const btnSavePassUsmb = document.getElementById('btn-usmb-save-pass');
+        const btnCancelPassUsmb = document.getElementById('btn-usmb-cancel-pass');
+        const newPassInputUsmb = document.getElementById('usmb-new-pass-input');
+
+        if (btnChangePassUsmb && changePassFormUsmb) {
+            btnChangePassUsmb.addEventListener('click', () => {
+                changePassFormUsmb.style.display = changePassFormUsmb.style.display === 'none' ? 'block' : 'none';
+                if (changePassFormUsmb.style.display === 'block') newPassInputUsmb.focus();
+            });
+
+            btnCancelPassUsmb.addEventListener('click', () => {
+                changePassFormUsmb.style.display = 'none';
+                newPassInputUsmb.value = '';
+            });
+
+            btnSavePassUsmb.addEventListener('click', () => {
+                const newPass = newPassInputUsmb.value.trim();
+                if (!newPass) {
+                    showToast('Erreur', 'Veuillez saisir un mot de passe.', 'error');
+                    return;
+                }
+
+                btnSavePassUsmb.disabled = true;
+                btnSavePassUsmb.innerHTML = '<span class="spinner-border spinner-border-sm" style="margin-right:4px;"></span>...';
+
+                fetch(`{{ path('app_site_wp_change_password_usmb', {id: site.id}) }}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPass })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Succès', data.message);
+                        document.getElementById('usmb-pass-input').value = newPass;
+                        changePassFormUsmb.style.display = 'none';
+                        newPassInputUsmb.value = '';
+                    } else {
+                        showToast('Erreur', data.message, 'error');
+                    }
+                })
+                .catch(() => showToast('Erreur', 'Une erreur est survenue.', 'error'))
+                .finally(() => {
+                    btnSavePassUsmb.disabled = false;
+                    btnSavePassUsmb.innerHTML = '<i class="bi bi-check-lg"></i>Enregistrer';
+                });
+            });
+        }
+
+        if (siteUuid) {
+            // Indicateur visuel immédiat : Sync...
+            const badgeContainer = document.querySelector('.info-row span .badge').parentElement;
+            if (badgeContainer) {
+                badgeContainer.innerHTML = `<span class="badge badge-sync"><span class="spinner-border spinner-border-sm" style="width:10px; height:10px; margin-right:5px"></span>Sync...</span>`;
+            }
+            document.querySelector('.detail-act-list').innerHTML = `
+                <button class="btn btn-secondary disabled" style="width:100%;justify-content:center">
+                    <span class="spinner-border spinner-border-sm" style="margin-right: 8px;"></span>Synchronisation...
+                </button>
+            `;
+
+            checkStatus();
+            setInterval(checkStatus, 5000);
+        }
+    });
+</script>
+{% endblock %}

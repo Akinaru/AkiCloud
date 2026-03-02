@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Mon profil</span>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Mon profil</h1>
+            <p class="page-sub">Informations de votre compte</p>
+        </div>
+    </div>
+
+    <div class="detail-layout">
+        <div class="detail-sidebar">
+            <div class="detail-card">
+                <div class="detail-hero">
+                    <div class="detail-site-icon" style="background:linear-gradient(135deg,#2958cc,#006eff);color:#fff">
+                        <span style="font-size:18px;font-weight:700">{{ app.user.initials }}</span>
+                    </div>
+                    <div>
+                        <div class="detail-site-name">{{ app.user.fullName }}</div>
+                        <div class="detail-site-url">{{ app.user.email }}</div>
+                    </div>
+                </div>
+                <div class="info-rows">
+                    <div class="info-row">
+                        <span class="info-lbl">Rôle</span>
+                        <span class="info-val">
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <span class="badge badge-running"><span class="badge-dot"></span>Admin</span>
+                            {% else %}
+                                <span class="badge badge-type">User</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-lbl">Membre depuis</span>
+                        <span class="info-val">{{ app.user.createdAt|date('d/m/Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-actions-card">
+                <div class="detail-act-title">Actions</div>
+                <div class="detail-act-list">
+                    <a href="{{ path('app_logout') }}" class="btn btn-danger" style="width:100%;justify-content:center">
+                        <i class="bi bi-box-arrow-left"></i>Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="detail-main-card">
+                <div class="detail-main-hd">
+                    <div class="detail-main-title">Détails du compte</div>
+                </div>
+                <div class="detail-main-body">
+                    <div class="detail-prop-grid">
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Prénom</span>
+                            <span class="detail-prop-val">{{ app.user.firstName }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Nom</span>
+                            <span class="detail-prop-val">{{ app.user.lastName }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Email</span>
+                            <span class="detail-prop-val">{{ app.user.email }}</span>
+                        </div>
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">ID</span>
+                            <span class="detail-prop-val">#{{ app.user.id }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

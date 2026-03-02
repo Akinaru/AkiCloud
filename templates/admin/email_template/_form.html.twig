@@ -1,0 +1,44 @@
+{{ form_start(form) }}
+<div class="form-card-body">
+    <div class="form-grp">
+        {{ form_label(form.name, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+    </div>
+    <div class="form-grp">
+        {{ form_label(form.subject, null, {'label_attr': {'class': 'form-label'}}) }}
+        <div class="highlight-input-wrap" id="subject-highlight-wrap">
+            <div class="highlight-backdrop" id="subject-backdrop"><div class="highlight-content"></div></div>
+            {{ form_widget(form.subject, {'attr': {'class': 'form-control highlight-input', 'data-highlight-target': 'subject-backdrop'}}) }}
+        </div>
+    </div>
+    <div class="form-grp">
+        {{ form_label(form.content, null, {'label_attr': {'class': 'form-label'}}) }}
+        <div class="highlight-input-wrap highlight-textarea-wrap" id="content-highlight-wrap">
+            <div class="highlight-backdrop highlight-backdrop-textarea" id="content-backdrop"><div class="highlight-content"></div></div>
+            {{ form_widget(form.content, {'attr': {'class': 'form-control highlight-input highlight-textarea', 'data-highlight-target': 'content-backdrop'}}) }}
+        </div>
+        <div class="form-hint" style="margin-top: 12px; background: #f8f9fd; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; margin-bottom: 4px; color: var(--text);">Variables disponibles :</div>
+            <code class="var-badge">[prenom]</code>,
+            <code class="var-badge">[nom]</code>,
+            <code class="var-badge">[email]</code>,
+            <code class="var-badge">[url]</code>,
+            <code class="var-badge">[site_name]</code>,
+            <code class="var-badge">[wp_user]</code>,
+            <code class="var-badge">[wp_password]</code>
+            <div style="font-weight: 700; margin-bottom: 4px; margin-top: 10px; color: var(--text);">Mise en forme :</div>
+            <span style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;">
+                <code style="background:#fef3c7;padding:2px 5px;border-radius:3px; color: #000;">**texte**</code> <b>gras</b>&ensp;
+                <code style="background:#e0f2fe;padding:2px 5px;border-radius:3px; color: #000;">*texte*</code> <em>italique</em>&ensp;
+                <code style="background:#fce7f3;padding:2px 5px;border-radius:3px; color: #000;">__texte__</code> <u>souligné</u>
+            </span>
+        </div>
+    </div>
+</div>
+<div class="form-card-ft">
+    <a href="{{ path('admin_email_template_index') }}" class="btn btn-ghost">Annuler</a>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i>Enregistrer le modèle
+    </button>
+</div>
+{{ form_end(form) }}

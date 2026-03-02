@@ -1,0 +1,316 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Documentation Utilisateur — AkiCloud{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Documentation</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .doc-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+    }
+    .doc-tab {
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-2);
+        border-radius: var(--r-md);
+        transition: var(--t);
+        text-decoration: none;
+    }
+    .doc-tab:hover { background: var(--bg); }
+    .doc-tab.active {
+        background: var(--blue-light);
+        color: var(--blue);
+    }
+
+    .doc-container {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .doc-nav {
+        position: sticky;
+        top: calc(var(--topbar-h) + 20px);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border);
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .doc-nav-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-3);
+        margin-bottom: 12px;
+        padding-left: 12px;
+    }
+
+    .doc-nav-link {
+        display: block;
+        padding: 8px 12px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-2);
+        border-radius: var(--r-sm);
+        transition: var(--t);
+    }
+
+    .doc-nav-link:hover {
+        background: var(--bg);
+        color: var(--blue);
+    }
+
+    .doc-content {
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: 40px;
+    }
+
+    .doc-section {
+        margin-bottom: 48px;
+        scroll-margin-top: 100px;
+    }
+
+    .doc-section:last-child { margin-bottom: 0; }
+
+    .doc-section h2 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .doc-section h2 i { color: var(--blue); }
+
+    .doc-section h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 24px 0 12px;
+    }
+
+    .doc-section p {
+        color: var(--text-2);
+        line-height: 1.7;
+        margin-bottom: 16px;
+        font-size: 14.5px;
+    }
+
+    .doc-img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin: 16px 0 32px;
+        max-height: 700px;
+        object-fit: contain;
+    }
+
+    /* Status Badges for Doc */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-running { background: #e6f7ed; color: #00a854; }
+    .badge-stopped { background: #fff0f0; color: #EF3340; }
+    .badge-starting { background: #ececff; color: #11069f; }
+    .badge-failed { background: #fff5f5; color: #c92a2a; }
+
+    @media (max-width: 1024px) {
+        .doc-container { grid-template-columns: 1fr; }
+        .doc-nav { display: none; }
+        .doc-content { padding: 24px; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <h1 class="page-title">Utilisation du site</h1>
+            <p class="page-sub">Guide complet pour gérer vos instances et vos étudiants.</p>
+        </div>
+    </div>
+
+    <div class="doc-tabs">
+        <a href="{{ path('admin_documentation_user') }}" class="doc-tab active">Utilisation du site</a>
+        <a href="{{ path('admin_documentation_technical') }}" class="doc-tab">Documentation technique</a>
+    </div>
+
+    <div class="doc-container">
+        <nav class="doc-nav">
+            <div class="doc-nav-title">Sommaire</div>
+            <a href="#dashboard" class="doc-nav-link">Tableau de bord</a>
+            <a href="#sites" class="doc-nav-link">Gestion des sites</a>
+            <a href="#creation" class="doc-nav-link">Création en masse</a>
+            <a href="#details" class="doc-nav-link">Détails d'un site</a>
+            <a href="#monitoring" class="doc-nav-link">Monitoring</a>
+            <a href="#emails" class="doc-nav-link">Modèles d'emails</a>
+            <a href="#users" class="doc-nav-link">Utilisateurs</a>
+            <a href="#security" class="doc-nav-link">Sécurité & Logs</a>
+        </nav>
+
+        <div class="doc-content">
+            <!-- Tableau de bord -->
+            <section id="dashboard" class="doc-section">
+                <h2><i class="bi bi-speedometer2"></i> Tableau de bord</h2>
+                <p>Le tableau de bord est votre centre de pilotage. Il regroupe les indicateurs clés de performance et de santé de votre infrastructure.</p>
+                <ul>
+                    <li><strong>Statistiques globales</strong> : Nombre total de sites déployés, utilisateurs actifs et modèles d'emails enregistrés.</li>
+                    <li><strong>État du serveur</strong> : Un résumé visuel de la charge CPU, de l'occupation RAM et de l'espace disque. Si une jauge passe au rouge, une attention immédiate est requise.</li>
+                    <li><strong>Accès rapides</strong> : Des raccourcis vers les fonctions les plus utilisées comme la création de sites ou la gestion des emails.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-dashboard.png') }}" alt="Dashboard" class="doc-img">
+            </section>
+
+            <!-- Gestion des sites -->
+            <section id="sites" class="doc-section">
+                <h2><i class="bi bi-hdd-rack"></i> Gestion des sites</h2>
+                <p>Cette page liste l'ensemble des sites créés sur la plateforme. C'est ici que vous gérez le cycle de vie de chaque instance.</p>
+                
+                <h3>Statuts des sites</h3>
+                <ul>
+                    <li><span class="badge badge-running">Running</span> : Le site est en ligne et accessible.</li>
+                    <li><span class="badge badge-stopped">Stopped</span> : L'instance est éteinte mais les données sont conservées.</li>
+                    <li><span class="badge badge-starting">Starting / Building</span> : Le site est en cours de déploiement ou de démarrage sur Coolify.</li>
+                    <li><span class="badge badge-failed">Failed</span> : Une erreur est survenue lors du déploiement (souvent liée au Git ou à la BDD).</li>
+                </ul>
+
+                <h3>Actions groupées</h3>
+                <p>En cochant plusieurs sites, vous pouvez effectuer des actions en masse via le menu en bas de page : Démarrer, Arrêter ou Supprimer définitivement.</p>
+                <img src="{{ asset('img/doc/usmb-list-sites.png') }}" alt="Liste des sites" class="doc-img">
+
+                <h3>Formulaire d'édition</h3>
+                <p>L'édition permet de modifier les métadonnées du site :</p>
+                <ul>
+                    <li><strong>Nom du projet</strong> : Identifiant interne du site.</li>
+                    <li><strong>Propriétaire</strong> : Nom, prénom et email de l'étudiant responsable. Ces champs sont utilisés pour les notifications par email.</li>
+                    <li><strong>URL et Port</strong> : Informations techniques sur le routage du site.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-edit-site.png') }}" alt="Édition de site" class="doc-img">
+            </section>
+
+            <!-- Création en masse -->
+            <section id="creation" class="doc-section">
+                <h2><i class="bi bi-plus-circle"></i> Création en masse</h2>
+                <p>C'est l'outil le plus puissant pour les enseignants. Il permet de générer des centaines d'instances en un seul clic.</p>
+                
+                <h3>La balise [liste]</h3>
+                <p>C'est le cœur du système. Dans le champ "Modèle d'URL", la balise <code>[liste]</code> sera remplacée par :</p>
+                <ul>
+                    <li>Un numéro (1, 2, 3...) en mode <strong>Séquentiel</strong>.</li>
+                    <li>L'identifiant étudiant généré (ex: <code>amacheda</code>) en mode <strong>Liste (CSV)</strong>.</li>
+                </ul>
+
+                <h3>Import CSV</h3>
+                <p>Le fichier doit être au format <code>.csv</code> avec un séparateur point-virgule (<code>;</code>). Les colonnes obligatoires sont <code>nom;prenom;email</code>.</p>
+                <img src="{{ asset('img/doc/usmb-add-site-csv.png') }}" alt="Import CSV" class="doc-img">
+
+                <h3>Mode Séquentiel</h3>
+                <p>Idéal pour créer des sites de test rapides sans avoir de liste nominative. Vous définissez simplement le nombre d'instances à générer.</p>
+                <img src="{{ asset('img/doc/usmb-add-site-sequentiel.png') }}" alt="Mode séquentiel" class="doc-img">
+            </section>
+
+            <!-- Détails d'un site -->
+            <section id="details" class="doc-section">
+                <h2><i class="bi bi-gear"></i> Détails d'un site</h2>
+                <p>Cette page regroupe toutes les informations confidentielles et les outils de contrôle d'une instance spécifique.</p>
+                
+                <h3>Contrôle de l'instance</h3>
+                <p>Les boutons en haut à droite permettent de piloter l'état réel sur le serveur Coolify. <strong>Redémarrer</strong> est souvent la première solution en cas de site qui ne répond plus.</p>
+
+                <h3>Identifiants WordPress</h3>
+                <ul>
+                    <li><strong>Compte Administrateur</strong> : Le compte principal destiné à l'étudiant. Le mot de passe peut être réinitialisé ici en cas de perte.</li>
+                    <li><strong>Compte Technique USMB</strong> : Un compte "backdoor" créé automatiquement (utilisateur <code>usmb</code>) qui permet à l'équipe technique d'intervenir sans demander les accès à l'étudiant.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-show-site.png') }}" alt="Détails du site" class="doc-img">
+            </section>
+
+            <!-- Monitoring -->
+            <section id="monitoring" class="doc-section">
+                <h2><i class="bi bi-graph-up"></i> Monitoring</h2>
+                <p>Cette page affiche l'état de santé en temps réel de la machine physique (ou VM) qui fait tourner PHP et vos sites.</p>
+                <ul>
+                    <li><strong>CPU</strong> : Si la charge dépasse le nombre de cœurs (ex: > 4 sur un CPU 4 cœurs), le serveur ralentira.</li>
+                    <li><strong>Mémoire</strong> : Affiche l'utilisation de la RAM. Un serveur proche de 100% risque de tuer des conteneurs pour survivre (OOM Killer).</li>
+                    <li><strong>Disque</strong> : Surveillez bien l'espace restant, les logs Docker peuvent remplir le disque rapidement.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-monitoring.png') }}" alt="Monitoring" class="doc-img">
+            </section>
+
+            <!-- Modèles d'emails -->
+            <section id="emails" class="doc-section">
+                <h2><i class="bi bi-envelope"></i> Modèles d'emails</h2>
+                <p>Permet d'automatiser l'envoi des identifiants aux étudiants dès la création de leur site.</p>
+                
+                <h3>Balises disponibles</h3>
+                <p>Vous pouvez utiliser ces variables dans le sujet ou le corps du mail pour qu'elles soient remplacées dynamiquement :</p>
+                <ul>
+                    <li><code>[prenom]</code>, <code>[nom]</code> : Identité du propriétaire.</li>
+                    <li><code>[url]</code> : L'adresse complète du site (https://...).</li>
+                    <li><code>[site_name]</code> : Le nom donné au projet.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-list-emails.png') }}" alt="Modèles d'emails" class="doc-img">
+
+                <h3>Édition du contenu</h3>
+                <p>L'éditeur accepte le HTML simple. Vous pouvez prévisualiser le rendu avant de sauvegarder.</p>
+                <img src="{{ asset('img/doc/usmb-edit-email.png') }}" alt="Édition d'email" class="doc-img">
+            </section>
+
+            <!-- Utilisateurs -->
+            <section id="users" class="doc-section">
+                <h2><i class="bi bi-people"></i> Utilisateurs</h2>
+                <p>Gestion des accès à l'interface AkiCloud (et non aux sites WordPress eux-mêmes).</p>
+                <ul>
+                    <li><strong>Rôles</strong> : Un administrateur voit tout, un utilisateur ne voit que ses propres créations.</li>
+                    <li><strong>Statut</strong> : Vous pouvez suspendre un accès sans supprimer le compte.</li>
+                </ul>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <img src="{{ asset('img/doc/usmb-add-user.png') }}" alt="Ajout utilisateur" class="doc-img">
+                    <img src="{{ asset('img/doc/usmb-edit-user.png') }}" alt="Édition utilisateur" class="doc-img">
+                </div>
+            </section>
+
+            <!-- Sécurité -->
+            <section id="security" class="doc-section">
+                <h2><i class="bi bi-shield-lock"></i> Sécurité & Logs</h2>
+                <p>La transparence est totale sur les actions effectuées. Chaque ligne de log enregistre :</p>
+                <ul>
+                    <li><strong>Date</strong> : L'heure précise de l'action.</li>
+                    <li><strong>Utilisateur</strong> : Qui a effectué l'action.</li>
+                    <li><strong>Action</strong> : Une description détaillée (ex: "A supprimé le site #81").</li>
+                    <li><strong>IP</strong> : L'adresse réseau d'où provient la demande.</li>
+                </ul>
+                <img src="{{ asset('img/doc/usmb-securite.png') }}" alt="Sécurité" class="doc-img">
+            </section>
+        </div>
+    </div>
+{% endblock %}

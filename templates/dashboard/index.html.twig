@@ -1,0 +1,188 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+    <span class="bc-item current">Dashboard</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .badge-building {
+        background: var(--orange-bg);
+        color: var(--orange);
+    }
+    .badge-building .badge-dot {
+        background: var(--orange);
+        animation: pulse 2s infinite;
+    }
+    .badge-failed {
+        background: var(--red-bg);
+        color: var(--red);
+        border: 1px solid rgba(239, 51, 64, 0.2);
+    }
+    .badge-failed .badge-dot {
+        background: var(--red);
+    }
+    .badge-stopping {
+        background: #fff0e6;
+        color: #e67700;
+    }
+    .badge-stopping .badge-dot {
+        background: #e67700;
+        animation: pulse 2s infinite;
+    }
+    .badge-starting {
+        background: #f1edff;
+        color: var(--blue);
+    }
+    .badge-starting .badge-dot {
+        background: var(--blue);
+        animation: pulse 2s infinite;
+    }
+
+    .welcome-card {
+        padding: 48px;
+        margin-top: 24px;
+        background: linear-gradient(135deg, var(--surface) 0%, #f4f1ff 100%);
+    }
+    .welcome-title { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 16px; letter-spacing: -0.5px; }
+    .welcome-text { color: var(--text-2); font-size: 16px; line-height: 1.7; margin-bottom: 40px; max-width: 600px; }
+    .welcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .welcome-grid.single { grid-template-columns: 1fr; }
+    .welcome-btn { padding: 20px; gap: 18px; height: auto; align-items: flex-start; border-radius: var(--r-md); }
+    .welcome-btn i { font-size: 24px; }
+    .welcome-btn.large i { font-size: 28px; }
+    .welcome-btn-title { font-size: 16px; font-weight: 700; padding-bottom: 4px; }
+    .welcome-btn-sub { font-size: 12px; opacity: 0.8; font-weight: 400; }
+
+    @media (max-width: 768px) {
+        .welcome-card { padding: 32px 24px; }
+        .welcome-title { font-size: 22px; }
+        .welcome-text { font-size: 14px; margin-bottom: 32px; }
+        .welcome-grid { grid-template-columns: 1fr; }
+        .welcome-btn { padding: 16px; gap: 14px; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <div>
+            <div class="page-title">Vue d'ensemble</div>
+            <div class="page-sub">Gérez les instances cloud des étudiants.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+            <a href="{{ path('app_site_bulk_create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i>Ajouter des sites
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div>
+                <div class="stat-val">{{ stats.total }}</div>
+                <div class="stat-lbl">Sites total</div>
+            </div>
+            <div class="stat-ico blue"><i class="bi bi-hdd-stack"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val" style="color: var(--green)">{{ stats.running }}</div>
+                <div class="stat-lbl">En ligne</div>
+            </div>
+            <div class="stat-ico green"><i class="bi bi-lightning-charge"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val" style="color: var(--red)">{{ stats.total - stats.running }}</div>
+                <div class="stat-lbl">Arrêté(s)</div>
+            </div>
+            <div class="stat-ico red"><i class="bi bi-stop-circle"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-val" id="dashboard-cpu-usage" style="color: var(--orange)">{{ stats.cpu_usage }}</div>
+                <div class="stat-lbl">Charge CPU</div>
+            </div>
+            <div class="stat-ico orange"><i class="bi bi-cpu"></i></div>
+        </div>
+    </div>
+
+    <div class="table-card welcome-card">
+        <div>
+            {% if is_granted('ROLE_ADMIN') %}
+                <h2 class="welcome-title">Administration AkiCloud</h2>
+                <p class="welcome-text">
+                    Gérez l'ensemble de l'infrastructure depuis cette interface. Pilotez les instances, supervisez les ressources et administrez les comptes utilisateurs en toute simplicité.
+                </p>
+                <div class="welcome-grid">
+                    <a href="{{ path('app_site_index') }}" class="btn btn-primary welcome-btn">
+                        <i class="bi bi-globe2"></i>
+                        <div style="text-align: left;">
+                            <div class="welcome-btn-title">Gérer les sites</div>
+                            <div class="welcome-btn-sub">Contrôle et déploiement</div>
+                        </div>
+                    </a>
+                    <a href="{{ path('admin_user_index') }}" class="btn btn-secondary welcome-btn">
+                        <i class="bi bi-people"></i>
+                        <div style="text-align: left;">
+                            <div class="welcome-btn-title">Utilisateurs</div>
+                            <div class="welcome-btn-sub">Gestion des accès</div>
+                        </div>
+                    </a>
+                    <a href="{{ path('app_monitoring') }}" class="btn btn-secondary welcome-btn">
+                        <i class="bi bi-graph-up"></i>
+                        <div style="text-align: left;">
+                            <div class="welcome-btn-title">Monitoring</div>
+                            <div class="welcome-btn-sub">Ressources serveur</div>
+                        </div>
+                    </a>
+                    <a href="{{ path('app_security_dashboard') }}" class="btn btn-secondary welcome-btn">
+                        <i class="bi bi-shield-check"></i>
+                        <div style="text-align: left;">
+                            <div class="welcome-btn-title">Sécurité</div>
+                            <div class="welcome-btn-sub">Logs de connexion</div>
+                        </div>
+                    </a>
+                </div>
+            {% else %}
+                <h2 class="welcome-title">Mon Espace Cloud</h2>
+                <p class="welcome-text">
+                    Bienvenue sur votre espace personnel. Vous pouvez ici accéder à vos instances, suivre vos déploiements et gérer vos projets cloud en toute autonomie.
+                </p>
+                <div class="welcome-grid single">
+                    <a href="{{ path('app_site_index') }}" class="btn btn-primary welcome-btn large">
+                        <i class="bi bi-globe2"></i>
+                        <div style="text-align: left;">
+                            <div class="welcome-btn-title">Accéder à mes sites</div>
+                            <div class="welcome-btn-sub">Gérez vos instances personnelles</div>
+                        </div>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    function updateCpu() {
+        fetch('{{ path('api_monitoring_stats') }}')
+            .then(response => response.json())
+            .then(data => {
+                const cpuElement = document.getElementById('dashboard-cpu-usage');
+                if (cpuElement) {
+                    cpuElement.textContent = data.cpu + '%';
+                }
+            })
+            .catch(error => console.error('Error fetching CPU usage:', error));
+    }
+    // Update every 3 seconds
+    setInterval(updateCpu, 3000);
+</script>
+{% endblock %}

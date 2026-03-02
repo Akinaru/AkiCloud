@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ user.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <a href="{{ path('admin_user_index') }}" class="bc-item">Utilisateurs</a>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Modifier</span>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .user-form-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+        .user-form-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_user_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Retour aux utilisateurs
+    </a>
+
+    {{ form_start(form) }}
+    <div class="user-form-layout">
+        <div class="form-card" style="max-width: none;">
+            <div class="form-card-hd">
+                <div class="form-card-title">Modifier {{ user.fullName }}</div>
+                <div class="form-card-sub">Modifiez les informations du compte</div>
+            </div>
+
+            {{ include('admin/user/_form.html.twig') }}
+
+            <div class="form-card-ft">
+                <a href="{{ path('admin_user_index') }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i>Enregistrer</button>
+            </div>
+        </div>
+
+        <div class="table-card" style="padding: 24px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">
+                <i class="bi bi-info-circle" style="margin-right: 8px; color: var(--blue);"></i>Guide des rôles
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <span class="badge badge-running" style="margin-bottom: 6px;">Administrateur</span>
+                    <p style="font-size: 12.5px; color: var(--text-2); line-height: 1.5;">
+                        Accès complet à la plateforme : gestion des utilisateurs, monitoring, sécurité et paramètres globaux.
+                    </p>
+                </div>
+                <div>
+                    <span class="badge badge-type" style="margin-bottom: 6px;">Utilisateur</span>
+                    <p style="font-size: 12.5px; color: var(--text-2); line-height: 1.5;">
+                        Accès au dashboard et à la gestion des sites (CRUD). Ne peut pas accéder aux outils d'administration.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ form_end(form) }}
+{% endblock %}

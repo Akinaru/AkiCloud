@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau modèle d'email{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <a href="{{ path('admin_email_template_index') }}" class="bc-item" style="text-decoration:none">Modèles d'emails</a>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Nouveau</span>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+{% include 'admin/email_template/_editor_styles.html.twig' %}
+{% endblock %}
+
+{% block body %}
+    <div class="page-hd">
+        <h1 class="page-title">Nouveau modèle d'email</h1>
+    </div>
+
+    <div class="template-layout">
+        <div class="form-card" style="max-width: none;">
+            {{ include('admin/email_template/_form.html.twig') }}
+        </div>
+
+        <div class="preview-container">
+            <div class="preview-card">
+                <div class="preview-hd">
+                    <i class="bi bi-eye"></i>
+                    <span>Aperçu en direct</span>
+                </div>
+                <div class="preview-body">
+                    {% include 'admin/email_template/_preview_frame.html.twig' %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+{% include 'admin/email_template/_editor_scripts.html.twig' %}
+{% endblock %}
