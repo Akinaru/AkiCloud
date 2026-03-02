@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php echo getenv('APP_NAME') ?: '[project_name]'; ?> — AkiCloud</title>
+    <title><?php echo getenv('APP_NAME') ?: 'Projet en construction'; ?> — AkiCloud</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -253,29 +253,29 @@
                     </span>
                 </div>
 
-                <h1><?php echo getenv('APP_NAME') ?: '[project_name]'; ?></h1>
+                <h1><?php echo getenv('APP_NAME') ?: 'Projet en construction'; ?></h1>
 
                 <p class="intro">
-                    Page temporaire interne. Le projet est en cours de preparation et sera mis a jour apres le prochain deploy.
+                    Cette page est temporaire. Le projet est en cours de construction et une version complete arrive bientot.
                 </p>
 
                 <div class="info-box">
                     <i class="bi bi-tools"></i>
-                    <span>[next_step] Push Git puis redeploy pour remplacer cette page.</span>
+                    <span>On peaufine l'experience. Merci pour ta patience.</span>
                 </div>
 
                 <div class="meta" style="margin-top: 14px;">
                     <div class="meta-item">
-                        <span>[status]</span>
-                        <strong>[maintenance]</strong>
+                        <span>Etat</span>
+                        <strong>En developpement</strong>
                     </div>
                     <div class="meta-item">
-                        <span>[platform]</span>
-                        <strong>AkiCloud + Coolify</strong>
+                        <span>Priorite actuelle</span>
+                        <strong>Stabilisation & finition</strong>
                     </div>
                     <div class="meta-item">
-                        <span>[runtime]</span>
-                        <strong><?php echo strtoupper(getenv('APP_RUNTIME') ?: '[runtime]'); ?></strong>
+                        <span>Prochaine mise a jour</span>
+                        <strong>Bientot disponible</strong>
                     </div>
                 </div>
             </div>
@@ -283,7 +283,7 @@
             <div class="illu">
                 <div class="illu-content">
                     <span class="illu-tag">AkiCloud</span>
-                    <div class="illu-title">Projet initialise. Prochaine etape: publier le contenu applicatif.</div>
+                    <div class="illu-title">On construit quelque chose de propre. Le site arrive tres vite.</div>
                 </div>
             </div>
         </div>
