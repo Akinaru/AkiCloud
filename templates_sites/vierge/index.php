@@ -74,29 +74,6 @@
             width: auto;
         }
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--warn-bg);
-            color: var(--warn);
-            padding: 6px 14px;
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--warn);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -135,29 +112,6 @@
         .info-box i {
             font-size: 20px;
             color: var(--violet);
-        }
-
-        .meta {
-            background: linear-gradient(180deg, #f8f5ff 0%, #f2ecff 100%);
-            border: 1px solid var(--border);
-            border-radius: var(--r-md);
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .meta-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--text-2);
-        }
-
-        .meta-item strong {
-            color: var(--text);
-            font-weight: 700;
         }
 
         .illu {
@@ -246,13 +200,6 @@
                 <div class="brand">
                     <img src="Logo_AKI.png" alt="AKI" class="logo">
                 </div>
-                <div>
-                    <span class="status-badge">
-                        <span class="status-dot"></span>
-                        Maintenance projet
-                    </span>
-                </div>
-
                 <h1><?php echo getenv('APP_NAME') ?: 'Projet en construction'; ?></h1>
 
                 <p class="intro">
@@ -262,21 +209,6 @@
                 <div class="info-box">
                     <i class="bi bi-tools"></i>
                     <span>On peaufine l'experience. Merci pour ta patience.</span>
-                </div>
-
-                <div class="meta" style="margin-top: 14px;">
-                    <div class="meta-item">
-                        <span>Etat</span>
-                        <strong>En developpement</strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>Priorite actuelle</span>
-                        <strong>Stabilisation & finition</strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>Prochaine mise a jour</span>
-                        <strong>Bientot disponible</strong>
-                    </div>
                 </div>
             </div>
 
