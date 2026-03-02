@@ -28,20 +28,5 @@ services:
             $coolifyEnvironmentName: '%env(COOLIFY_ENV_NAME)%'
             $coolifyPrivateKeyUuid: '%env(COOLIFY_PRIVATE_KEY_UUID)%'
 
-    App\Service\DatabaseManager:
-        arguments:
-            $sharedDbHost: '%env(SHARED_DB_HOST)%'
-            $sharedDbPort: '%env(int:SHARED_DB_PORT)%'
-            $sharedDbUser: '%env(SHARED_DB_USER)%'
-            $sharedDbPassword: '%env(SHARED_DB_PASSWORD)%'
-    App\Service\WordPressConfigService:
-        arguments:
-            $coolifyApiUrl: '%env(COOLIFY_API_URL)%'
-            $coolifyToken: '%env(COOLIFY_API_TOKEN)%'
-            $sharedDbHost: '%env(SHARED_DB_HOST)%'
-            $sharedDbPort: '%env(int:SHARED_DB_PORT)%'
-            $sharedDbUser: '%env(SHARED_DB_USER)%'
-            $sharedDbPassword: '%env(SHARED_DB_PASSWORD)%'
-
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

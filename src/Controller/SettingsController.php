@@ -22,7 +22,7 @@ class SettingsController extends AbstractController
         if (!$baseDomain) {
             $baseDomain = new Setting();
             $baseDomain->setSettingKey('base_domain');
-            $baseDomain->setSettingValue('cloud.fac-info.fr');
+            $baseDomain->setSettingValue('akinaru.fr');
             $entityManager->persist($baseDomain);
         }
 

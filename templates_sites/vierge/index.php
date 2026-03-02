@@ -3,22 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php echo getenv('APP_NAME') ?: 'Projet Étudiant'; ?> — AkiCloud</title>
+    <title><?php echo getenv('APP_NAME') ?: '[project_name]'; ?> — AkiCloud</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
-            --blue: #11069f;
+            --violet: #8f7ae6;
+            --violet-dark: #7a64d6;
+            --violet-soft: #f1edff;
             --surface: #ffffff;
-            --border: #e2e6f0;
-            --text: #151d32;
-            --text-2: #5c6484;
-            --green: #00a854;
-            --green-bg: #e6f7ed;
-            --r-lg: 14px;
-            --shadow-lg: 0 12px 36px rgba(15,25,50,.14);
+            --border: #e4def8;
+            --text: #1c1830;
+            --text-2: #5f577e;
+            --warn: #b45309;
+            --warn-bg: #fff7e8;
+            --r-lg: 16px;
+            --r-md: 12px;
+            --shadow-lg: 0 18px 48px rgba(22, 17, 45, .18);
             --font: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
@@ -26,7 +29,7 @@
 
         body {
             font-family: var(--font);
-            background: linear-gradient(to bottom, #11069f 0%, #03214D 100%);
+            background: radial-gradient(circle at 20% 10%, #9687de 0%, #6f5bcf 38%, #322954 100%);
             color: var(--text);
             font-size: 14px;
             line-height: 1.55;
@@ -35,7 +38,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 900px;
         }
 
         .card {
@@ -43,28 +51,40 @@
             border-radius: var(--r-lg);
             box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 420px;
-            padding: 40px 32px;
-            text-align: center;
+            padding: 30px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 22px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
         }
 
         .logo {
-            max-height: 70px;
+            max-height: 52px;
             width: auto;
-            margin-bottom: 32px;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: var(--green-bg);
-            color: var(--green);
+            background: var(--warn-bg);
+            color: var(--warn);
             padding: 6px 14px;
             border-radius: 100px;
             font-size: 12px;
             font-weight: 700;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -72,7 +92,7 @@
         .status-dot {
             width: 6px;
             height: 6px;
-            background: var(--green);
+            background: var(--warn);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -84,24 +104,25 @@
         }
 
         h1 {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 30px;
+            font-weight: 800;
             color: var(--text);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             letter-spacing: -0.5px;
+            line-height: 1.2;
         }
 
-        p {
+        .intro {
             color: var(--text-2);
-            font-size: 14px;
-            margin-bottom: 32px;
+            font-size: 15px;
+            margin-bottom: 24px;
             line-height: 1.6;
         }
 
         .info-box {
-            background: #f8f9fd;
+            background: #f8f5ff;
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: var(--r-md);
             padding: 16px;
             font-size: 13px;
             color: var(--text-2);
@@ -113,44 +134,163 @@
 
         .info-box i {
             font-size: 20px;
-            color: var(--blue);
+            color: var(--violet);
+        }
+
+        .meta {
+            background: linear-gradient(180deg, #f8f5ff 0%, #f2ecff 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-2);
+        }
+
+        .meta-item strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .illu {
+            position: relative;
+            min-height: 260px;
+            border-radius: var(--r-md);
+            background: linear-gradient(160deg, #2e2550 0%, #6f5bcf 52%, #9788df 100%);
+            overflow: hidden;
+        }
+
+        .illu::before,
+        .illu::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(0.5px);
+        }
+
+        .illu::before {
+            width: 220px;
+            height: 220px;
+            right: -40px;
+            top: -40px;
+            background: rgba(255,255,255,.18);
+        }
+
+        .illu::after {
+            width: 180px;
+            height: 180px;
+            left: -30px;
+            bottom: -30px;
+            background: rgba(255,255,255,.12);
+        }
+
+        .illu-content {
+            position: absolute;
+            inset: 0;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: #fff;
+        }
+
+        .illu-tag {
+            align-self: flex-start;
+            background: rgba(255,255,255,.2);
+            border: 1px solid rgba(255,255,255,.28);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 8px;
+        }
+
+        .illu-title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.3;
+            max-width: 240px;
         }
 
         .footer {
-            margin-top: 24px;
+            margin-top: 14px;
             font-size: 11px;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.56);
             font-weight: 500;
+            text-align: center;
+        }
+
+        @media (max-width: 860px) {
+            .grid { grid-template-columns: 1fr; }
+            .illu { min-height: 180px; }
+            h1 { font-size: 25px; }
         }
     </style>
 </head>
 <body>
 
-<div>
+<div class="wrap">
     <div class="card">
-        <img src="Logo_AKI.png" alt="AKI" class="logo">
+        <div class="grid">
+            <div>
+                <div class="brand">
+                    <img src="Logo_AKI.png" alt="AKI" class="logo">
+                </div>
+                <div>
+                    <span class="status-badge">
+                        <span class="status-dot"></span>
+                        Maintenance projet
+                    </span>
+                </div>
 
-        <div>
-            <span class="status-badge">
-                <span class="status-dot"></span>
-                Site en ligne
-            </span>
-        </div>
+                <h1><?php echo getenv('APP_NAME') ?: '[project_name]'; ?></h1>
 
-        <h1><?php echo getenv('APP_NAME') ?: 'Nouveau Projet'; ?></h1>
+                <p class="intro">
+                    Page temporaire interne. Le projet est en cours de preparation et sera mis a jour apres le prochain deploy.
+                </p>
 
-        <p>
-            Votre instance a été déployée avec succès sur l'infrastructure <strong>AkiCloud</strong>. Vous pouvez maintenant commencer à travailler.
-        </p>
+                <div class="info-box">
+                    <i class="bi bi-tools"></i>
+                    <span>[next_step] Push Git puis redeploy pour remplacer cette page.</span>
+                </div>
 
-        <div class="info-box">
-            <i class="bi bi-info-circle-fill"></i>
-            <span>Pour remplacer cette page, envoyez vos fichiers à la racine de votre projet.</span>
+                <div class="meta" style="margin-top: 14px;">
+                    <div class="meta-item">
+                        <span>[status]</span>
+                        <strong>[maintenance]</strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>[platform]</span>
+                        <strong>AkiCloud + Coolify</strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>[runtime]</span>
+                        <strong><?php echo strtoupper(getenv('APP_RUNTIME') ?: '[runtime]'); ?></strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="illu">
+                <div class="illu-content">
+                    <span class="illu-tag">AkiCloud</span>
+                    <div class="illu-title">Projet initialise. Prochaine etape: publier le contenu applicatif.</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="footer" style="text-align: center;">
-        Propulsé par Coolify v4 & Symfony — Infrastructure Cloud USMB
+    <div class="footer">
+        Propulse par Coolify v4 - AkiCloud
     </div>
 </div>
 

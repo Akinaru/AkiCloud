@@ -4,7 +4,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
 \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        locales apt-utils git libicu-dev g++ libpng-dev libxml2-dev libzip-dev libonig-dev libxslt-dev unzip \
+        locales apt-utils git libicu-dev g++ libpng-dev libxml2-dev libzip-dev libonig-dev libxslt-dev libpq-dev unzip \
         libfreetype6-dev libjpeg-dev libjpeg62-turbo libjpeg62-turbo-dev nodejs npm \
 \
     && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
@@ -23,7 +23,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     && docker-php-ext-configure soap \
 \
     && docker-php-ext-install \
-            pdo pdo_mysql mysqli opcache intl zip calendar dom mbstring gd xsl soap \
+            pdo pdo_mysql pdo_pgsql mysqli opcache intl zip calendar dom mbstring gd xsl soap \
 \
     && pecl install apcu && docker-php-ext-enable apcu
 

@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Site;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -20,9 +21,25 @@ class SiteType extends AbstractType
             ->add('type', ChoiceType::class, [
                 'label' => 'Type de stack',
                 'choices' => [
-                    'WordPress' => 'wordpress',
-                    'Site Vierge (HTML/PHP)' => 'static',
+                    'PHP' => 'php',
+                    'Node.js' => 'node',
+                    'Statique' => 'static',
                 ],
+            ])
+            ->add('gitRepository', null, [
+                'label' => 'Dépôt Git personnalisé',
+                'required' => false,
+                'attr' => ['placeholder' => 'Optionnel - ex: git@github.com:owner/repo.git'],
+            ])
+            ->add('publishDirectory', null, [
+                'label' => 'Dossier de publication',
+                'required' => false,
+                'attr' => ['placeholder' => '/'],
+            ])
+            ->add('ownerDifferent', CheckboxType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => 'Le proprietaire est different de moi',
             ])
             ->add('port', null, [
                 'label' => 'Port (Optionnel)',

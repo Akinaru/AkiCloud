@@ -4,12 +4,14 @@ namespace App\Controller\Api;
 
 use App\Entity\Site;
 use App\Repository\SiteRepository;
+use App\Repository\SettingRepository;
 use App\Service\CoolifyApiService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class SiteStatusController extends AbstractController
 {
@@ -17,13 +19,15 @@ class SiteStatusController extends AbstractController
     public function checkStatus(
         Request $request,
         SiteRepository $siteRepository,
+        SettingRepository $settingRepository,
+        HttpClientInterface $httpClient,
         CoolifyApiService $coolifyApi,
         EntityManagerInterface $entityManager,
-        \App\Service\EmailNotificationService $emailService,
-        \App\Service\WordPressConfigService $wpConfigService
+        \App\Service\EmailNotificationService $emailService
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         $siteIds = $data['ids'] ?? [];
+        $baseDomain = (string) $settingRepository->getValue('base_domain', 'akinaru.fr');
         
         $results = [];
         $changed = false;
@@ -36,6 +40,18 @@ class SiteStatusController extends AbstractController
 
             $currentStatus = $site->getStatus();
             $realStatus = $coolifyApi->getResourceStatus($site->getCoolifyUuid());
+
+            // Fallback pragmatique: si Coolify renvoie "unknown" mais le domaine repond,
+            // on sort le site de l'etat "sync/building" infini.
+            if ($realStatus === 'unknown' && in_array($currentStatus, [
+                Site::STATUS_BUILDING,
+                Site::STATUS_STARTING,
+                Site::STATUS_RESTARTING,
+            ], true)) {
+                if ($this->isSiteReachable($httpClient, $site, $baseDomain)) {
+                    $realStatus = Site::STATUS_RUNNING;
+                }
+            }
 
             if ($realStatus === 'unknown') {
                 $results[] = [
@@ -83,19 +99,6 @@ class SiteStatusController extends AbstractController
                 $site->setStatus($finalStatus);
                 $changed = true;
 
-                // SI LE SITE WP PASSE EN RUNNING ET QU'IL FAUT AUTO-CONFIGURER
-                if ($finalStatus === Site::STATUS_RUNNING
-                    && $site->getType() === 'wordpress'
-                    && $site->getWpAdminUser()
-                    && !$site->isWpConfigured()
-                ) {
-                    try {
-                        $wpConfigService->installWordPress($site);
-                    } catch (\Exception $e) {
-                        error_log("Failed to auto-configure WordPress for site " . $site->getId() . ": " . $e->getMessage());
-                    }
-                }
-
                 // SI LE SITE PASSE EN RUNNING ET QU'IL Y A UN EMAIL EN ATTENTE
                 if ($finalStatus === Site::STATUS_RUNNING && $site->getPendingEmailTemplate()) {
                     try {
@@ -126,5 +129,30 @@ class SiteStatusController extends AbstractController
         }
 
         return $this->json(['sites' => $results]);
+    }
+
+    private function isSiteReachable(HttpClientInterface $httpClient, Site $site, string $baseDomain): bool
+    {
+        $baseDomain = trim($baseDomain);
+        $baseDomain = preg_replace('#^https?://#i', '', $baseDomain) ?? $baseDomain;
+        $baseDomain = preg_replace('#/.*$#', '', $baseDomain) ?? $baseDomain;
+        $baseDomain = trim($baseDomain, '.');
+        if ($baseDomain === '' || !$site->getSubdomain()) {
+            return false;
+        }
+
+        $url = sprintf('https://%s.%s', $site->getSubdomain(), $baseDomain);
+
+        try {
+            $response = $httpClient->request('GET', $url, [
+                'timeout' => 4.0,
+                'max_redirects' => 2,
+            ]);
+
+            $status = $response->getStatusCode();
+            return $status >= 200 && $status < 500;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Site;
+use App\Repository\SettingRepository;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
@@ -12,6 +13,7 @@ class CoolifyApiService
 
     public function __construct(
         private HttpClientInterface $httpClient,
+        private SettingRepository $settingRepository,
         private EventLoggerService $logger,
         private string $coolifyApiUrl = 'https://app.coolify.io/api/v1',
         private string $coolifyToken = '',
@@ -24,62 +26,59 @@ class CoolifyApiService
 
     public function deploy(Site $site): array
     {
-        $type = $site->getType();
+        $type = (string) ($site->getType() ?: 'php');
         $uuid = null;
 
         try {
-            if ($type === 'wordpress') {
-                $this->logger->info('Création mode Docker Image (WordPress)');
+            $this->logger->info(sprintf('Creation mode Git prive (%s)', $type));
 
-                $body = [
-                    'project_uuid' => $this->coolifyProjectUuid,
-                    'server_uuid' => $this->coolifyServerUuid,
-                    'environment_name' => $this->coolifyEnvironmentName,
-                    'destination_uuid' => $this->coolifyServerUuid,
-                    'name' => $site->getName(),
-                    'domains' => sprintf('https://%s.akinaru.fr', $site->getSubdomain()),
-                    'docker_registry_image_name' => 'wordpress',
-                    'docker_registry_image_tag' => 'latest',
-                    'ports_exposes' => '80',
-                ];
+            $hasCustomRepository = (bool) $site->getGitRepository();
+            $gitRepository = (string) ($hasCustomRepository ? $site->getGitRepository() : self::FACTORY_GIT_REPO);
+            $publishDirectory = (string) ($site->getPublishDirectory() ?: '/');
+            $isStatic = $type === 'static';
+            $baseDirectory = $hasCustomRepository ? '/' : '/templates_sites/vierge';
+            $baseDomain = $this->normalizeBaseDomain((string) $this->settingRepository->getValue('base_domain', 'akinaru.fr'));
+            $domain = sprintf('https://%s.%s', (string) $site->getSubdomain(), $baseDomain);
 
-                $response = $this->httpClient->request('POST', $this->coolifyApiUrl . '/applications/dockerimage', [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->coolifyToken,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'json' => $body,
-                ]);
-            } else {
-                $this->logger->info('Création mode Git Privé (Vierge)');
+            $body = [
+                'name' => $site->getName(),
+                'domains' => $domain,
+                'force_domain_override' => true,
+                'project_uuid' => $this->coolifyProjectUuid,
+                'server_uuid' => $this->coolifyServerUuid,
+                'environment_name' => $this->coolifyEnvironmentName,
+                'destination_uuid' => $this->coolifyServerUuid,
+                'git_branch' => 'main',
+                'ports_exposes' => (string) ($site->getPort() ?: 80),
+                'private_key_uuid' => $this->coolifyPrivateKeyUuid,
+                'is_static' => $isStatic,
+                'git_repository' => $gitRepository,
+                'build_pack' => 'nixpacks',
+                'base_directory' => $baseDirectory,
+                'publish_directory' => $publishDirectory,
+            ];
 
-                $body = [
-                    'name' => $site->getName(),
-                    'domains' => sprintf('https://%s.akinaru.fr', $site->getSubdomain()),
-                    'project_uuid' => $this->coolifyProjectUuid,
-                    'server_uuid' => $this->coolifyServerUuid,
-                    'environment_name' => $this->coolifyEnvironmentName,
-                    'destination_uuid' => $this->coolifyServerUuid,
-                    'git_branch' => 'prod',
-                    'ports_exposes' => '80',
-                    'private_key_uuid' => $this->coolifyPrivateKeyUuid,
-                    'is_static' => false,
-                    'git_repository' => self::FACTORY_GIT_REPO,
-                    'build_pack' => 'nixpacks',
-                    'base_directory' => '/templates_sites/vierge',
-                    'publish_directory' => '/',
-                ];
-
-                $response = $this->httpClient->request('POST', $this->coolifyApiUrl . '/applications/private-deploy-key', [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->coolifyToken,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'json' => $body,
-                ]);
+            $response = $this->httpClient->request('POST', $this->coolifyApiUrl . '/applications/private-deploy-key', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->coolifyToken,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $body,
+            ]);
+            $statusCode = $response->getStatusCode();
+            $rawBody = $response->getContent(false);
+            if ($statusCode < 200 || $statusCode >= 300) {
+                throw new \RuntimeException(sprintf(
+                    'Creation application Coolify en echec (HTTP %d): %s',
+                    $statusCode,
+                    $this->extractApiError($rawBody)
+                ));
             }
 
-            $data = $response->toArray();
+            $data = json_decode($rawBody, true);
+            if (!is_array($data)) {
+                throw new \RuntimeException('Reponse Coolify invalide lors de la creation application.');
+            }
             $uuid = $data['uuid'] ?? null;
 
             if (!$uuid) {
@@ -91,15 +90,8 @@ class CoolifyApiService
             // Étape 2 : Variables d'Environnement
             $envs = [
                 'APP_NAME' => $site->getName(),
+                'APP_RUNTIME' => $type,
             ];
-
-            if ($type === 'wordpress') {
-                $envs['WORDPRESS_DB_HOST'] = $site->getDbHost();
-                $envs['WORDPRESS_DB_USER'] = $site->getDbUser();
-                $envs['WORDPRESS_DB_PASSWORD'] = $site->getDbPassword();
-                $envs['WORDPRESS_DB_NAME'] = $site->getDbName();
-                $envs['WORDPRESS_LOCALE'] = 'fr_FR';
-            }
 
             foreach ($envs as $key => $value) {
                 $envBody = [
@@ -108,12 +100,6 @@ class CoolifyApiService
                     'is_preview' => false,
                     'is_literal' => true
                 ];
-
-                // "is_build_time" est interdit pour les images Docker (WordPress)
-                // mais requis/utile pour les déploiements Git (Static)
-                if ($type !== 'wordpress') {
-                    $envBody['is_build_time'] = false;
-                }
 
                 $this->httpClient->request('POST', $this->coolifyApiUrl . '/applications/' . $uuid . '/envs', [
                     'headers' => [
@@ -159,7 +145,11 @@ class CoolifyApiService
 
             $content = $response->getContent(false);
             $data = json_decode($content, true);
-            $coolifyStatus = strtolower($data['status'] ?? '');
+            if (!is_array($data)) {
+                return 'unknown';
+            }
+
+            $coolifyStatus = $this->extractCoolifyStatus($data);
 
             // 1. Si le statut contient failed (explicite) ou degraded -> STATUS_FAILED
             if (str_contains($coolifyStatus, 'failed') || str_contains($coolifyStatus, 'degraded')) {
@@ -192,6 +182,36 @@ class CoolifyApiService
             $this->logger->error(sprintf('Impossible de récupérer le statut Coolify pour %s : %s', $uuid, $e->getMessage()));
             return 'unknown';
         }
+    }
+
+    private function extractCoolifyStatus(array $data): string
+    {
+        $candidates = [
+            $data['status'] ?? null,
+            $data['application_status'] ?? null,
+            $data['deployment_status'] ?? null,
+            $data['health'] ?? null,
+            $data['state'] ?? null,
+            $data['current_status'] ?? null,
+            $data['application']['status'] ?? null,
+            $data['application']['state'] ?? null,
+            $data['application']['health'] ?? null,
+            $data['application']['docker_status'] ?? null,
+            $data['application']['application_status'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate)) {
+                continue;
+            }
+
+            $normalized = trim(mb_strtolower($candidate));
+            if ($normalized !== '') {
+                return $normalized;
+            }
+        }
+
+        return '';
     }
 
     public function stopResource(string $uuid): bool
@@ -235,6 +255,18 @@ class CoolifyApiService
                     'uuid' => $uuid,
                 ],
             ]);
+            $statusCode = $response->getStatusCode();
+            $rawBody = $response->getContent(false);
+            if ($statusCode < 200 || $statusCode >= 300) {
+                return [
+                    'status' => 'error',
+                    'message' => sprintf(
+                        'Deploiement refuse par Coolify (HTTP %d): %s',
+                        $statusCode,
+                        $this->extractApiError($rawBody)
+                    ),
+                ];
+            }
 
             return [
                 'status' => 'success',
@@ -247,6 +279,37 @@ class CoolifyApiService
                 'message' => $e->getMessage(),
             ];
         }
+    }
+
+    private function extractApiError(?string $rawBody): string
+    {
+        $rawBody = is_string($rawBody) ? trim($rawBody) : '';
+        if ($rawBody === '') {
+            return 'Aucun detail retourne par l API.';
+        }
+
+        $decoded = json_decode($rawBody, true);
+        if (!is_array($decoded)) {
+            return mb_substr($rawBody, 0, 500);
+        }
+
+        foreach (['message', 'error', 'detail'] as $key) {
+            if (isset($decoded[$key]) && is_string($decoded[$key]) && trim($decoded[$key]) !== '') {
+                return trim($decoded[$key]);
+            }
+        }
+
+        return mb_substr($rawBody, 0, 500);
+    }
+
+    private function normalizeBaseDomain(string $domain): string
+    {
+        $domain = trim($domain);
+        $domain = preg_replace('#^https?://#i', '', $domain) ?? $domain;
+        $domain = preg_replace('#/.*$#', '', $domain) ?? $domain;
+        $domain = trim($domain, '.');
+
+        return $domain !== '' ? mb_strtolower($domain) : 'akinaru.fr';
     }
 
     public function deleteResource(string $uuid): bool

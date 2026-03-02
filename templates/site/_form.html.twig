@@ -1,16 +1,17 @@
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+{% set isNewSiteForm = app.request.attributes.get('_route') == 'app_site_new' %}
 
 <div class="form-card-body">
     <div class="form-grp">
         {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
         {{ form_widget(form.name, {'attr': {'class': 'form-control' ~ (form.name.vars.valid ? '' : ' is-invalid'), 'placeholder': 'ex: site-dupont-2024'}}) }}
         {{ form_errors(form.name) }}
-        <span class="form-hint">Nom unique identifiant le projet de l'étudiant.</span>
+        <span class="form-hint">Nom fonctionnel du site sur la plateforme.</span>
     </div>
 
     <div class="form-row-2">
         <div class="form-grp">
-            {{ form_label(form.type, 'Type de stack', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_label(form.type, 'Runtime', {'label_attr': {'class': 'form-label'}}) }}
             {{ form_widget(form.type, {'attr': {'class': 'form-select' ~ (form.type.vars.valid ? '' : ' is-invalid')}}) }}
             {{ form_errors(form.type) }}
         </div>
@@ -21,9 +22,33 @@
         </div>
     </div>
 
-    <div style="padding: 20px; background: #f8f9fd; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px;">
+    <div class="form-row-2">
+        <div class="form-grp">
+            {{ form_label(form.gitRepository, 'Dépôt Git', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control' ~ (form.gitRepository.vars.valid ? '' : ' is-invalid'), 'placeholder': 'git@github.com:owner/repo.git'}}) }}
+            {{ form_errors(form.gitRepository) }}
+            <span class="form-hint">Optionnel. Si vide, un site vierge de maintenance sera deploye automatiquement.</span>
+        </div>
+        <div class="form-grp">
+            {{ form_label(form.publishDirectory, 'Publish directory', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control' ~ (form.publishDirectory.vars.valid ? '' : ' is-invalid'), 'placeholder': '/'}}) }}
+            {{ form_errors(form.publishDirectory) }}
+            <span class="form-hint">Dossier final servi par le runtime.</span>
+        </div>
+    </div>
+
+    {% if isNewSiteForm %}
+    <div class="form-grp" style="margin-top: 8px;">
+        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;" id="owner-different-label">
+            {{ form_widget(form.ownerDifferent) }}
+            <span class="form-label" style="margin:0;">Le proprietaire est different de moi</span>
+        </label>
+    </div>
+    {% endif %}
+
+    <div id="owner-fields-panel" style="padding: 20px; background: #f8f9fd; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px; {% if isNewSiteForm %}display:none;{% endif %}">
         <div style="font-weight: 700; font-size: 13.5px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-person-badge" style="color: var(--blue);"></i>Informations propriétaire (Optionnel)
+            <i class="bi bi-person-badge" style="color: var(--blue);"></i>Informations contact (Optionnel)
         </div>
         <div class="form-row-2">
             <div class="form-grp">
@@ -44,7 +69,7 @@
     <div class="form-grp" style="margin-top: 12px;">
         {{ form_label(form.pendingEmailTemplate, 'Notifier à la fin du déploiement', {'label_attr': {'class': 'form-label'}}) }}
         {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
-        <span class="form-hint">L'email sera envoyé automatiquement dès que l'instance sera opérationnelle (Running).</span>
+        <span class="form-hint">Email envoyé automatiquement quand l'instance passe en Running.</span>
     </div>
 </div>
 
@@ -58,3 +83,28 @@
 </div>
 
 {{ form_end(form) }}
+
+{% if isNewSiteForm %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('input[type="checkbox"][name$="[ownerDifferent]"]');
+    if (!toggle) {
+        var label = document.getElementById('owner-different-label');
+        if (label) {
+            toggle = label.querySelector('input[type="checkbox"]');
+        }
+    }
+    var panel = document.getElementById('owner-fields-panel');
+    if (!toggle || !panel) {
+        return;
+    }
+
+    var syncVisibility = function () {
+        panel.style.display = toggle.checked ? 'block' : 'none';
+    };
+
+    syncVisibility();
+    toggle.addEventListener('change', syncVisibility);
+});
+</script>
+{% endif %}

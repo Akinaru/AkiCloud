@@ -10,10 +10,10 @@ class DatabaseManager
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private string $sharedDbHost,
-        private int $sharedDbPort,
-        private string $sharedDbUser,
-        private string $sharedDbPassword
+        private string $sharedDbHost = 'db',
+        private int $sharedDbPort = 3306,
+        private string $sharedDbUser = 'root',
+        private string $sharedDbPassword = ''
     ) {
     }
 
