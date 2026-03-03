@@ -14,9 +14,14 @@
             <h1 class="page-title">Utilisateurs</h1>
             <p class="page-sub">Gérez les comptes d'accès à la plateforme</p>
         </div>
-        <a href="{{ path('admin_user_new') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i>Nouvel utilisateur
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="{{ path('admin_user_invite') }}" class="btn btn-secondary">
+                <i class="bi bi-envelope-plus"></i>Inviter par email
+            </a>
+            <a href="{{ path('admin_user_new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i>Nouvel utilisateur
+            </a>
+        </div>
     </div>
 
     <div class="table-card">
@@ -77,15 +82,85 @@
                                 <a href="{{ path('admin_user_edit', {'id': user.id}) }}" class="btn btn-secondary btn-sm" title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                {% if app.user and app.user.id != user.id %}
+                                    <form method="post" action="{{ path('admin_user_delete', {'id': user.id}) }}" onsubmit="return confirm('Supprimer cet utilisateur ? Cette action est irréversible.');" style="display:inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                        <button class="btn btn-ghost btn-sm" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
                 {% else %}
                     <tr class="table-empty-row">
-                        <td colspan="5">
+                        <td colspan="6">
                             <i class="bi bi-people empty-icon"></i>
                             <div class="empty-title">Aucun utilisateur</div>
                             <div class="empty-hint">Créez un premier utilisateur pour commencer</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="table-card" style="margin-top:18px">
+        <div class="table-hd">
+            <div class="table-hd-left">
+                <span class="table-title">Invitations en attente</span>
+                <span class="table-count">{{ pendingInvitations|length }}</span>
+            </div>
+        </div>
+        <table class="dtable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Envoyée le</th>
+                    <th>Expire le</th>
+                    <th>Invité par</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invitation in pendingInvitations %}
+                    <tr>
+                        <td><span style="color:var(--text-2)">{{ invitation.email }}</span></td>
+                        <td>
+                            {% if invitation.role == 'ROLE_ADMIN' %}
+                                <span class="badge badge-running"><span class="badge-dot"></span>Admin</span>
+                            {% else %}
+                                <span class="badge badge-type">User</span>
+                            {% endif %}
+                        </td>
+                        <td><span style="color:var(--text-2);font-size:12.5px">{{ invitation.createdAt|date('d/m/Y H:i') }}</span></td>
+                        <td><span style="color:var(--text-2);font-size:12.5px">{{ invitation.expiresAt|date('d/m/Y H:i') }}</span></td>
+                        <td>
+                            <span style="color:var(--text-2);font-size:12.5px">
+                                {% if invitation.invitedBy %}
+                                    {{ invitation.invitedBy.fullName }}
+                                {% else %}
+                                    Système
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <form method="post" action="{{ path('admin_user_invitation_delete', {'id': invitation.id}) }}" onsubmit="return confirm('Supprimer cette invitation ?');" style="display:inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_invitation' ~ invitation.id) }}">
+                                <button class="btn btn-ghost btn-sm" title="Supprimer l'invitation">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr class="table-empty-row">
+                        <td colspan="6">
+                            <i class="bi bi-envelope-check empty-icon"></i>
+                            <div class="empty-title">Aucune invitation en attente</div>
+                            <div class="empty-hint">Les invitations envoyées apparaîtront ici.</div>
                         </td>
                     </tr>
                 {% endfor %}

@@ -47,7 +47,7 @@ class UtilityTestController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         $emailAddress = $data['email'] ?? $this->getUser()->getEmail();
-        $fromEmail = $settings->getValue('sender_email', 'noreply@akinaru.fr');
+        $fromEmail = $settings->getValue('sender_email', 'noreply@akiagency.fr');
 
         if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
             return new JsonResponse([

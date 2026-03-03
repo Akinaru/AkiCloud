@@ -25,8 +25,8 @@ class EmailNotificationService
             return;
         }
 
-        $baseDomain = $this->settingRepository->getValue('base_domain', 'cloud.fac-info.fr');
-        $fromEmail = $this->settingRepository->getValue('sender_email', 'noreply@akinaru.fr');
+        $baseDomain = $this->settingRepository->getValue('base_domain', 'cloud.akinaru.fr');
+        $fromEmail = $this->settingRepository->getValue('sender_email', 'noreply@akiagency.fr');
 
         $placeholders = [
             '[prenom]' => $site->getOwnerFirstname(),
@@ -159,7 +159,7 @@ WPROWS;
 <!-- Footer -->
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;">
 <tr><td align="center" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:500;">
-    AkiCloud — Infrastructure Cloud pour étudiants
+    AkiCloud — Infrastructure Cloud
 </td></tr>
 </table>
 

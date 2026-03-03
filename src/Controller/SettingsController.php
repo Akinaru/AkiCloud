@@ -30,7 +30,7 @@ class SettingsController extends AbstractController
         if (!$senderEmail) {
             $senderEmail = new Setting();
             $senderEmail->setSettingKey('sender_email');
-            $senderEmail->setSettingValue('noreply@akinaru.fr');
+            $senderEmail->setSettingValue('noreply@akiagency.fr');
             $entityManager->persist($senderEmail);
         }
 

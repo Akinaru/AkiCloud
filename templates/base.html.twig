@@ -1370,9 +1370,6 @@
                 <a href="{{ path('app_monitoring') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_monitoring' %}active{% endif %}">
                     <i class="bi bi-graph-up"></i><span>Monitoring</span>
                 </a>
-                <a href="{{ path('app_security_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_security_dashboard' %}active{% endif %}">
-                    <i class="bi bi-shield-check"></i><span>Sécurité</span>
-                </a>
                 <a href="{{ path('admin_email_template_index') }}" class="nav-link {% if app.request.attributes.get('_route') starts with 'admin_email_template' %}active{% endif %}">
                     <i class="bi bi-envelope-paper"></i><span>Modèles d'emails</span>
                 </a>
