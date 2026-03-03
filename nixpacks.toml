@@ -1,5 +1,9 @@
 [phases.install]
-cmds = ["mkdir -p /var/log/nginx /var/cache/nginx", "composer install --ignore-platform-reqs --no-scripts --no-interaction --prefer-dist"]
+cmds = [
+  "mkdir -p /var/log/nginx /var/cache/nginx",
+  "composer install --ignore-platform-reqs --no-scripts --no-interaction --prefer-dist",
+  "mkdir -p /app/var/cache /app/var/log && chmod -R 0777 /app/var"
+]
 
 [phases.build]
 cmds = ["composer dump-autoload --optimize --classmap-authoritative --no-interaction"]
