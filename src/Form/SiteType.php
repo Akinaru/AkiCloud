@@ -72,13 +72,6 @@ class SiteType extends AbstractType
             ->add('ownerFirstname', null, ['label' => 'Prénom propriétaire (Optionnel)'])
             ->add('ownerLastname', null, ['label' => 'Nom propriétaire (Optionnel)'])
             ->add('ownerEmail', null, ['label' => 'Email propriétaire (Optionnel)'])
-            ->add('pendingEmailTemplate', \Symfony\Bridge\Doctrine\Form\Type\EntityType::class, [
-                'class' => \App\Entity\EmailTemplate::class,
-                'choice_label' => 'name',
-                'label' => 'Modèle d\'email de notification',
-                'placeholder' => 'Ne pas envoyer d\'email',
-                'required' => false,
-            ])
             ->add('authorizedUsers', EntityType::class, [
                 'class' => User::class,
                 'label' => 'Utilisateurs autorisés',

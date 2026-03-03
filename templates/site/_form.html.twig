@@ -355,11 +355,6 @@
                 <span class="form-hint">Seuls les utilisateurs autorisés pourront ouvrir le site.</span>
             </div>
 
-            <div class="form-grp" style="margin-top: 6px;">
-                {{ form_label(form.pendingEmailTemplate, 'Email à envoyer en fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
-                {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
-            </div>
-
             <section class="access-block">
                 <div class="access-block-hd">
                     <div class="access-panel-title">
@@ -536,11 +531,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 {{ form_label(form.publishDirectory, 'Dossier de publication', {'label_attr': {'class': 'form-label'}}) }}
                 {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control'}}) }}
             </div>
-        </div>
-
-        <div class="form-grp">
-            {{ form_label(form.pendingEmailTemplate, 'Email de fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
         </div>
 
         <div class="form-grp" style="margin-top: 10px;">
