@@ -378,17 +378,17 @@ class CoolifyApiService
                     'Authorization' => 'Bearer ' . $this->coolifyToken,
                     'Content-Type' => 'application/json',
                 ],
-                'json' => [
-                    'custom_labels' => $nextLabels,
-                ],
+                'json' => $this->buildApplicationUpdatePayload($data, $site, $host, $nextLabels),
             ]);
 
             $updateStatus = $updateResponse->getStatusCode();
             if ($updateStatus < 200 || $updateStatus >= 300) {
+                $updateRawBody = $updateResponse->getContent(false);
                 $this->logger->warning(sprintf(
-                    'Mise a jour des labels de protection echouee pour %s (HTTP %d).',
+                    'Mise a jour des labels de protection echouee pour %s (HTTP %d): %s',
                     $site->getName(),
-                    $updateStatus
+                    $updateStatus,
+                    $this->extractApiError($updateRawBody)
                 ));
                 return;
             }
@@ -429,6 +429,30 @@ class CoolifyApiService
         ];
 
         return implode("\n", $labels);
+    }
+
+    private function buildApplicationUpdatePayload(array $data, Site $site, string $host, string $customLabels): array
+    {
+        $domain = sprintf('https://%s', $host);
+
+        return [
+            'name' => (string) ($data['name'] ?? $site->getName() ?? 'site'),
+            'domains' => (string) ($data['domains'] ?? $data['fqdn'] ?? $domain),
+            'force_domain_override' => true,
+            'project_uuid' => (string) ($data['project_uuid'] ?? $this->coolifyProjectUuid),
+            'server_uuid' => (string) ($data['server_uuid'] ?? $this->coolifyServerUuid),
+            'environment_name' => (string) ($data['environment_name'] ?? $this->coolifyEnvironmentName),
+            'destination_uuid' => (string) ($data['destination_uuid'] ?? $this->coolifyServerUuid),
+            'git_branch' => (string) ($data['git_branch'] ?? 'main'),
+            'ports_exposes' => (string) ($data['ports_exposes'] ?? $site->getPort() ?? 80),
+            'private_key_uuid' => (string) ($data['private_key_uuid'] ?? $this->coolifyPrivateKeyUuid),
+            'is_static' => (bool) ($data['is_static'] ?? ($site->getType() === 'static')),
+            'git_repository' => (string) ($data['git_repository'] ?? self::FACTORY_GIT_REPO),
+            'build_pack' => (string) ($data['build_pack'] ?? 'nixpacks'),
+            'base_directory' => (string) ($data['base_directory'] ?? '/templates_sites/vierge'),
+            'publish_directory' => (string) ($data['publish_directory'] ?? '/'),
+            'custom_labels' => $customLabels,
+        ];
     }
 
     private function mergeManagedCustomLabels(string $existingLabels, string $managedLabels): string

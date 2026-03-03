@@ -44,7 +44,7 @@ final class SiteController extends AbstractController
     ): Response {
         $site = new Site();
         $site->setStatus(Site::STATUS_BUILDING);
-        $site->setType('static');
+        $site->setType('php');
         $site->setDeploymentSource(Site::SOURCE_LOCAL_VOLUME);
         $site->setGitRepository(null);
         $site->setPort(80);
@@ -88,7 +88,7 @@ final class SiteController extends AbstractController
                 }
             }
 
-            $site->setType('static');
+            $site->setType('php');
             $site->setDeploymentSource(Site::SOURCE_LOCAL_VOLUME);
             $site->setGitRepository(null);
             $site->setPort(80);
