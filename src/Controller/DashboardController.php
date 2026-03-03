@@ -8,12 +8,13 @@ use App\Entity\User;
 use App\Service\ServerMonitoringService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 class DashboardController extends AbstractController
 {
     #[Route('/', name: 'app_dashboard')]
-    public function index(SiteRepository $siteRepository, SettingRepository $settingRepository, ServerMonitoringService $monitoringService): Response
+    public function index(SiteRepository $siteRepository, SettingRepository $settingRepository, ServerMonitoringService $monitoringService): Response|RedirectResponse
     {
         $currentUser = $this->getUser();
         if (!$currentUser instanceof User) {
@@ -21,6 +22,10 @@ class DashboardController extends AbstractController
         }
 
         $isAdmin = $this->isGranted('ROLE_ADMIN');
+        if (!$isAdmin) {
+            return $this->redirectToRoute('app_middle_office');
+        }
+
         $allSites = $isAdmin
             ? $siteRepository->findAll()
             : $siteRepository->findAccessibleForUser($currentUser);

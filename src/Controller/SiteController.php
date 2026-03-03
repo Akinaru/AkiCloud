@@ -21,6 +21,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/site')]
+#[IsGranted('ROLE_ADMIN')]
 final class SiteController extends AbstractController
 {
     #[Route('/bulk-create', name: 'app_site_bulk_create', methods: ['GET'])]

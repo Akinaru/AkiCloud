@@ -1354,12 +1354,18 @@
         <nav class="sb-nav">
             <div class="sb-section">
                 <span class="sb-section-label">Principal</span>
-                <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
-                    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
-                </a>
-                <a href="{{ path('app_site_index') }}" class="nav-link {% if app.request.attributes.get('_route') starts with 'app_site' %}active{% endif %}">
-                    <i class="bi bi-hdd-rack"></i><span>Sites</span>
-                </a>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                    </a>
+                    <a href="{{ path('app_site_index') }}" class="nav-link {% if app.request.attributes.get('_route') starts with 'app_site' %}active{% endif %}">
+                        <i class="bi bi-hdd-rack"></i><span>Sites</span>
+                    </a>
+                {% else %}
+                    <a href="{{ path('app_middle_office') }}" class="nav-link {% if app.request.attributes.get('_route') starts with 'app_middle_office' or app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
+                        <i class="bi bi-grid-1x2"></i><span>Mon espace</span>
+                    </a>
+                {% endif %}
             </div>
             {% if is_granted('ROLE_ADMIN') %}
             <div class="sb-section">

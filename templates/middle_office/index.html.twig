@@ -1,0 +1,407 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon Espace{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .sidebar,
+    .sidebar-overlay,
+    .topbar {
+        display: none !important;
+    }
+    .main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .content {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .mo-page {
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at 8% 0%, rgba(143,122,230,.22), transparent 36%),
+            radial-gradient(circle at 92% 100%, rgba(111,91,207,.16), transparent 42%),
+            #f3f4fb;
+    }
+
+    .mo-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 18px 20px 36px;
+    }
+
+    .mo-header {
+        border: 1px solid #dddff0;
+        border-radius: 18px;
+        background: rgba(255,255,255,.8);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 10px 30px rgba(28,32,64,.08);
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .mo-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mo-brand img {
+        height: 46px;
+        width: auto;
+    }
+
+    .mo-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .mo-link {
+        height: 38px;
+        border: 1px solid #d8dbeb;
+        border-radius: 10px;
+        background: #fff;
+        color: #313a60;
+        padding: 0 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all .15s ease;
+    }
+
+    .mo-link:hover {
+        border-color: #8f7ae6;
+        color: #8f7ae6;
+    }
+
+    .mo-link.primary {
+        background: #8f7ae6;
+        border-color: #8f7ae6;
+        color: #fff;
+    }
+
+    .mo-link.primary:hover {
+        background: #7a64d6;
+        border-color: #7a64d6;
+        color: #fff;
+    }
+
+    .mo-hero {
+        border: 1px solid #dfe3f2;
+        border-radius: 18px;
+        background: linear-gradient(128deg, #fff 0%, #f6f3ff 54%, #fefeff 100%);
+        box-shadow: 0 14px 34px rgba(28,32,64,.08);
+        padding: 22px;
+    }
+
+    .mo-panels {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .mo-panel {
+        border: 1px solid #dde2f2;
+        border-radius: 14px;
+        background: #fff;
+        padding: 16px;
+        min-height: 210px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(24,32,56,.05);
+    }
+
+    .mo-panel-title {
+        font-size: 19px;
+        font-weight: 800;
+        color: #1a2038;
+        margin-bottom: 8px;
+    }
+
+    .mo-panel-sub {
+        font-size: 14px;
+        color: #5d6685;
+        line-height: 1.55;
+    }
+
+    .mo-panel-visual {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e4def8;
+        background: linear-gradient(160deg, #2e2550 0%, #6f5bcf 52%, #9788df 100%);
+        color: #fff;
+    }
+
+    .mo-panel-visual::before,
+    .mo-panel-visual::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(0.5px);
+    }
+
+    .mo-panel-visual::before {
+        width: 220px;
+        height: 220px;
+        right: -40px;
+        top: -40px;
+        background: rgba(255,255,255,.18);
+    }
+
+    .mo-panel-visual::after {
+        width: 180px;
+        height: 180px;
+        left: -30px;
+        bottom: -30px;
+        background: rgba(255,255,255,.12);
+    }
+
+    .mo-section-title {
+        margin: 22px 0 12px;
+        color: #1a2038;
+        font-size: 21px;
+        font-weight: 800;
+    }
+
+    .mo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 14px;
+    }
+
+    .mo-card {
+        border: 1px solid #dfe3f2;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 22px rgba(21,30,54,.06);
+        overflow: hidden;
+    }
+
+    .mo-card-cover {
+        min-height: 126px;
+        position: relative;
+        overflow: hidden;
+        border-bottom: 1px solid #e4def8;
+        background: linear-gradient(160deg, #2e2550 0%, #6f5bcf 52%, #9788df 100%);
+    }
+
+    .mo-card-cover::before,
+    .mo-card-cover::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(0.5px);
+    }
+
+    .mo-card-cover::before {
+        width: 220px;
+        height: 220px;
+        right: -40px;
+        top: -40px;
+        background: rgba(255,255,255,.18);
+    }
+
+    .mo-card-cover::after {
+        width: 180px;
+        height: 180px;
+        left: -30px;
+        bottom: -30px;
+        background: rgba(255,255,255,.12);
+    }
+
+    .mo-card-cover.v2::before {
+        width: 170px;
+        height: 170px;
+        right: auto;
+        left: -35px;
+        top: -28px;
+    }
+
+    .mo-card-cover.v2::after {
+        width: 230px;
+        height: 230px;
+        left: auto;
+        right: -70px;
+        bottom: -85px;
+    }
+
+    .mo-card-cover.v3::before {
+        width: 250px;
+        height: 250px;
+        right: -95px;
+        top: -95px;
+    }
+
+    .mo-card-cover.v3::after {
+        width: 140px;
+        height: 140px;
+        left: 18px;
+        bottom: -70px;
+    }
+
+    .mo-card-cover.v4::before {
+        width: 190px;
+        height: 190px;
+        right: 10px;
+        top: -110px;
+    }
+
+    .mo-card-cover.v4::after {
+        width: 210px;
+        height: 210px;
+        left: -95px;
+        bottom: -40px;
+    }
+
+    .mo-status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,.35);
+        background: rgba(255,255,255,.2);
+        color: #fff;
+        backdrop-filter: blur(2px);
+    }
+
+    .mo-status-running { background: rgba(0,168,84,.25); }
+    .mo-status-starting,
+    .mo-status-building,
+    .mo-status-restarting { background: rgba(255,171,0,.28); }
+    .mo-status-stopped,
+    .mo-status-stopping { background: rgba(120,130,160,.32); }
+    .mo-status-failed { background: rgba(239,51,64,.32); }
+
+    .mo-card-body {
+        padding: 14px 18px 17px;
+    }
+
+    .mo-card-name {
+        font-size: 17px;
+        font-weight: 800;
+        color: #1c2340;
+        margin-bottom: 4px;
+    }
+
+    .mo-card-domain {
+        color: #6b57c6;
+        font-size: 12px;
+        word-break: break-all;
+        margin-bottom: 12px;
+    }
+
+    .mo-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .mo-empty {
+        border: 1px dashed #cdd4ea;
+        border-radius: 16px;
+        background: #fff;
+        padding: 38px;
+        text-align: center;
+        color: #60688a;
+    }
+
+    @media (max-width: 980px) {
+        .mo-panels {
+            grid-template-columns: 1fr;
+        }
+
+        .mo-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 760px) {
+        .mo-shell {
+            padding: 12px 12px 26px;
+        }
+
+        .mo-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .mo-brand {
+            justify-content: center;
+        }
+
+        .mo-nav {
+            width: 100%;
+        }
+
+        .mo-link {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="mo-page">
+    <div class="mo-shell">
+        <header class="mo-header">
+            <div class="mo-brand">
+                <img src="{{ asset('img/Logo-AKI-Off.png') }}" alt="AKI">
+            </div>
+            <nav class="mo-nav">
+                <a class="mo-link" href="{{ path('app_profile') }}"><i class="bi bi-person"></i>Mon profil</a>
+                <a class="mo-link primary" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right"></i>Déconnexion</a>
+            </nav>
+        </header>
+
+        <h2 class="mo-section-title">Mes sites</h2>
+
+        {% if sites is empty %}
+            <div class="mo-empty">
+                <i class="bi bi-folder2-open" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+                Aucun site ne t'a encore été attribué.
+            </div>
+        {% else %}
+            <div class="mo-grid">
+                {% for site in sites %}
+                    {% set coverVariant = 'v' ~ ((loop.index0 % 4) + 1) %}
+                    {% set normalizedStatus = (site.status ?: 'unknown')|lower %}
+                    <article class="mo-card">
+                        <div class="mo-card-cover {{ coverVariant }}">
+                            <span class="mo-status-badge mo-status-{{ normalizedStatus }}">{{ (site.status ?: 'inconnu')|capitalize }}</span>
+                        </div>
+                        <div class="mo-card-body">
+                            <div class="mo-card-name">{{ site.name }}</div>
+                            <div class="mo-card-domain">{{ site.customDomain ?: site.getFullUrl(base_domain) }}</div>
+
+                            <div class="mo-actions">
+                                <a href="https://{{ site.customDomain ?: site.getFullUrl(base_domain) }}" target="_blank" class="btn btn-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i>Ouvrir
+                                </a>
+                                <a href="{{ path('app_middle_office_site_show', {'id': site.id}) }}" class="btn btn-secondary">
+                                    <i class="bi bi-eye"></i>Détails
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
