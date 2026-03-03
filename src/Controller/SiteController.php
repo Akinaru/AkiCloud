@@ -14,7 +14,7 @@ use App\Service\EventLoggerService;
 use App\Service\WordPressConfigService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\FormErrorIterator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -94,16 +94,7 @@ final class SiteController extends AbstractController
             $site->setPort(80);
             $site->setPublishDirectory('/');
             $site->setCreateDatabase(true);
-
-            $volumePath = '/var/www/akicloud/' . $effectiveDomain;
-            $site->setLocalVolumePath($volumePath);
-            try {
-                $this->ensureLocalVolumeScaffold($volumePath, $site->getName() ?? 'Projet');
-            } catch (\Throwable $e) {
-                $logger->error(sprintf('Création volume local échouée pour "%s": %s', $site->getName(), $e->getMessage()));
-                $this->addFlash('error', 'Impossible de créer le volume local: vérifie les permissions sur /var/www/akicloud.');
-                return $this->redirectToRoute('app_site_new');
-            }
+            $site->setLocalVolumePath(null);
 
             $entityManager->persist($site);
             $entityManager->flush();
@@ -138,6 +129,15 @@ final class SiteController extends AbstractController
             return $this->redirectToRoute('app_site_show', ['id' => $site->getId()]);
         }
 
+        if ($form->isSubmitted() && !$form->isValid()) {
+            $errors = $this->flattenFormErrors($form->getErrors(true));
+            $logger->warning(sprintf(
+                'Echec validation creation site (form invalide). Erreurs: %s',
+                $errors !== [] ? implode(' | ', $errors) : 'Aucune erreur detaillee'
+            ));
+            $this->addFlash('error', 'Le formulaire contient des erreurs. Vérifie les champs puis réessaie.');
+        }
+
         return $this->render('site/new.html.twig', [
             'site' => $site,
             'form' => $form,
@@ -162,24 +162,17 @@ final class SiteController extends AbstractController
         return $value !== '' ? mb_strtolower($value) : null;
     }
 
-    private function ensureLocalVolumeScaffold(string $path, string $siteName): void
+    /**
+     * @return list<string>
+     */
+    private function flattenFormErrors(FormErrorIterator $errors): array
     {
-        $fs = new Filesystem();
-        if (!$fs->exists($path)) {
-            $fs->mkdir($path, 0775);
+        $messages = [];
+        foreach ($errors as $error) {
+            $messages[] = $error->getMessage();
         }
 
-        $indexPath = rtrim($path, '/') . '/index.html';
-        if ($fs->exists($indexPath)) {
-            return;
-        }
-
-        $content = '<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'
-            . htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8')
-            . '</title><style>body{margin:0;font-family:Arial,sans-serif;background:#1a1a1a;color:#ecdbba;display:flex;min-height:100vh;align-items:center;justify-content:center}main{max-width:680px;padding:28px;text-align:center;border:1px solid #2d4263;background:#191919;border-radius:12px}h1{margin:0 0 10px;font-size:26px;color:#ecdbba}p{margin:0;color:#bfb09c}code{color:#c84b31}</style></head><body><main><h1>Projet en construction</h1><p>Le dossier local est prêt: <code>'
-            . htmlspecialchars($path, ENT_QUOTES, 'UTF-8')
-            . '</code></p></main></body></html>';
-        $fs->dumpFile($indexPath, $content);
+        return array_values(array_unique(array_filter($messages, static fn ($m) => trim((string) $m) !== '')));
     }
 
     #[Route('/{id}/wp-change-password', name: 'app_site_wp_change_password', methods: ['POST'])]
