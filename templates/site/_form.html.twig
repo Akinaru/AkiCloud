@@ -327,6 +327,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <div class="form-row-2">
         <div class="form-grp">
+            {{ form_label(form.deploymentSource, 'Source de déploiement', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.deploymentSource, {'attr': {'class': 'form-select'}}) }}
+            {{ form_errors(form.deploymentSource) }}
+        </div>
+        <div class="form-grp">
+            {{ form_label(form.gitRepository, 'Dépôt Git public', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control', 'placeholder': 'https://github.com/owner/repo.git'}}) }}
+            {{ form_errors(form.gitRepository) }}
+        </div>
+    </div>
+
+    <div class="form-row-2">
+        <div class="form-grp">
             {{ form_label(form.customDomain, 'Domaine custom', {'label_attr': {'class': 'form-label'}}) }}
             {{ form_widget(form.customDomain, {'attr': {'class': 'form-control'}}) }}
         </div>
@@ -339,6 +352,39 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="form-grp">
         {{ form_label(form.pendingEmailTemplate, 'Email de fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
         {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
+    </div>
+
+    <div class="form-grp" style="margin-top: 10px;">
+        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            {{ form_widget(form.createDatabase) }}
+            <span class="form-label" style="margin:0;">Créer une base de données liée</span>
+        </label>
+    </div>
+
+    <div class="form-grp" style="margin-top: 10px;">
+        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            {{ form_widget(form.ownerDifferent) }}
+            <span class="form-label" style="margin:0;">Le propriétaire est différent de moi</span>
+        </label>
+    </div>
+
+    <div class="form-row-2">
+        <div class="form-grp">
+            {{ form_label(form.ownerFirstname, 'Prénom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.ownerFirstname) }}
+        </div>
+        <div class="form-grp">
+            {{ form_label(form.ownerLastname, 'Nom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.ownerLastname) }}
+        </div>
+    </div>
+
+    <div class="form-grp">
+        {{ form_label(form.ownerEmail, 'Email propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.ownerEmail) }}
     </div>
 </div>
 
