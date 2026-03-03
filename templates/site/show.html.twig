@@ -110,6 +110,13 @@
                         <span class="info-val"><i class="bi bi-people" style="margin-right:5px;"></i>{{ site.authorizedUsers|length }}</span>
                     </div>
                     <div class="info-row">
+                        <span class="info-lbl">Protection</span>
+                        <span class="info-val">
+                            <i class="bi {{ site.isProtected ? 'bi-shield-lock' : 'bi-shield-check' }}" style="margin-right:5px;"></i>
+                            {{ site.isProtected ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+                    <div class="info-row">
                         <span class="info-lbl">Port</span>
                         <span class="port-mono">:{{ site.port }}</span>
                     </div>

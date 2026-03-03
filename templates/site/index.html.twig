@@ -198,7 +198,7 @@
                     <td><span class="badge badge-type">{{ site.type }}</span></td>
                     <td>
                         <span class="badge badge-type">
-                            <i class="bi bi-people" style="margin-right:4px;"></i>{{ site.authorizedUsers|length }}
+                            <i class="bi {{ site.isProtected ? 'bi-shield-lock' : 'bi-shield-check' }}" style="margin-right:4px;"></i>{{ site.authorizedUsers|length }}
                         </span>
                     </td>
                     <td class="status-cell">

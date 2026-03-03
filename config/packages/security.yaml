@@ -44,4 +44,6 @@ security:
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
         - { path: ^/invite/, roles: PUBLIC_ACCESS }
+        - { path: ^/auth/site-access$, roles: PUBLIC_ACCESS }
+        - { path: ^/site-access-denied$, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }

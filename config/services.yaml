@@ -27,6 +27,7 @@ services:
             $coolifyProjectUuid: '%env(COOLIFY_PROJECT_UUID)%'
             $coolifyEnvironmentName: '%env(COOLIFY_ENV_NAME)%'
             $coolifyPrivateKeyUuid: '%env(COOLIFY_PRIVATE_KEY_UUID)%'
+            $appPublicUrl: '%env(APP_PUBLIC_URL)%'
 
     App\Service\DatabaseManager:
         arguments:
@@ -34,6 +35,10 @@ services:
             $sharedDbPort: '%env(int:SHARED_DB_PORT)%'
             $sharedDbUser: '%env(SHARED_DB_USER)%'
             $sharedDbPassword: '%env(SHARED_DB_PASSWORD)%'
+
+    App\Controller\SiteAccessController:
+        arguments:
+            $appPublicUrl: '%env(APP_PUBLIC_URL)%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

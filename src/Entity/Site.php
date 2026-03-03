@@ -103,6 +103,9 @@ class Site
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $wpConfigured = false;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isProtected = false;
+
     #[ORM\ManyToOne]
     private ?EmailTemplate $pendingEmailTemplate = null;
 
@@ -449,6 +452,18 @@ class Site
     public function setWpConfigured(bool $wpConfigured): static
     {
         $this->wpConfigured = $wpConfigured;
+
+        return $this;
+    }
+
+    public function isProtected(): bool
+    {
+        return $this->isProtected;
+    }
+
+    public function setIsProtected(bool $isProtected): static
+    {
+        $this->isProtected = $isProtected;
 
         return $this;
     }

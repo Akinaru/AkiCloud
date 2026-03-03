@@ -347,6 +347,14 @@
                 </label>
             </div>
 
+            <div class="form-grp" style="margin-top:10px;">
+                <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                    {{ form_widget(form.isProtected) }}
+                    <span class="form-label" style="margin:0;">Activer la protection du site (login + droits)</span>
+                </label>
+                <span class="form-hint">Seuls les utilisateurs autorisés pourront ouvrir le site.</span>
+            </div>
+
             <div class="form-grp" style="margin-top: 6px;">
                 {{ form_label(form.pendingEmailTemplate, 'Email à envoyer en fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
                 {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
@@ -540,6 +548,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 {{ form_widget(form.createDatabase) }}
                 <span class="form-label" style="margin:0;">Créer une base de données liée</span>
             </label>
+        </div>
+
+        <div class="form-grp" style="margin-top: 10px;">
+            <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                {{ form_widget(form.isProtected) }}
+                <span class="form-label" style="margin:0;">Protéger ce site (login + droits)</span>
+            </label>
+            <span class="form-hint">Si activé, seuls les utilisateurs liés au site (ou admin) pourront y accéder.</span>
         </div>
 
         <div class="form-grp" style="margin-top: 10px;">

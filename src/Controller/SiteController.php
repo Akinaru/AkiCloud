@@ -369,13 +369,18 @@ final class SiteController extends AbstractController
 
     #[Route('/{id}/edit', name: 'app_site_edit', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function edit(Request $request, Site $site, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, Site $site, EntityManagerInterface $entityManager, CoolifyApiService $coolifyApi): Response
     {
         $form = $this->createForm(SiteType::class, $site);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
+
+            if ($site->getCoolifyUuid()) {
+                $coolifyApi->syncProtection($site);
+            }
+
             $this->addFlash('success', sprintf('Site "%s" modifie avec succes.', $site->getName()));
             return $this->redirectToRoute('app_site_index', [], Response::HTTP_SEE_OTHER);
         }

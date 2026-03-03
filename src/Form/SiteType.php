@@ -55,6 +55,11 @@ class SiteType extends AbstractType
                 'required' => false,
                 'label' => 'Créer une base de données liée au site',
             ])
+            ->add('isProtected', CheckboxType::class, [
+                'required' => false,
+                'label' => 'Protéger ce site (accès réservé aux utilisateurs autorisés)',
+                'help' => 'Si activé, le site n est accessible qu aux utilisateurs liés au site.',
+            ])
             ->add('ownerDifferent', CheckboxType::class, [
                 'mapped' => false,
                 'required' => false,

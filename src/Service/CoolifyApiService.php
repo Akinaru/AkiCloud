@@ -20,7 +20,8 @@ class CoolifyApiService
         private string $coolifyServerUuid = 'localhost',
         private string $coolifyProjectUuid = '',
         private string $coolifyEnvironmentName = 'production',
-        private string $coolifyPrivateKeyUuid = ''
+        private string $coolifyPrivateKeyUuid = '',
+        private string $appPublicUrl = 'https://akinaru.fr'
     ) {
     }
 
@@ -116,6 +117,8 @@ class CoolifyApiService
                     'json' => $envBody,
                 ]);
             }
+
+            $this->syncProtectionForUuid($site, $uuid, $host);
 
             // Étape 3 : Déclenchement du déploiement
             return $this->startResource($uuid);
@@ -317,6 +320,136 @@ class CoolifyApiService
         $domain = trim($domain, '.');
 
         return $domain !== '' ? mb_strtolower($domain) : 'akinaru.fr';
+    }
+
+    public function syncProtection(Site $site): void
+    {
+        $uuid = $site->getCoolifyUuid();
+        if (!$uuid) {
+            return;
+        }
+
+        $baseDomain = $this->normalizeBaseDomain((string) $this->settingRepository->getValue('base_domain', 'akinaru.fr'));
+        $host = $site->getFullUrl($baseDomain);
+        if ($host === '') {
+            return;
+        }
+
+        $this->syncProtectionForUuid($site, $uuid, $host);
+    }
+
+    private function syncProtectionForUuid(Site $site, string $uuid, string $host): void
+    {
+        try {
+            $response = $this->httpClient->request('GET', $this->coolifyApiUrl . '/applications/' . $uuid, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->coolifyToken,
+                ],
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $rawBody = $response->getContent(false);
+            if ($statusCode < 200 || $statusCode >= 300) {
+                $this->logger->warning(sprintf(
+                    'Impossible de lire la config de labels Coolify pour %s (HTTP %d): %s',
+                    $site->getName(),
+                    $statusCode,
+                    $this->extractApiError($rawBody)
+                ));
+                return;
+            }
+
+            $data = json_decode($rawBody, true);
+            if (!is_array($data)) {
+                $this->logger->warning(sprintf('Reponse invalide lors de la lecture des labels Coolify pour %s.', $site->getName()));
+                return;
+            }
+
+            $existingLabels = (string) ($data['custom_labels'] ?? '');
+            $managedLabels = $site->isProtected() ? $this->buildProtectionLabels($site, $uuid, $host) : '';
+            $nextLabels = $this->mergeManagedCustomLabels($existingLabels, $managedLabels);
+
+            if (trim($nextLabels) === trim($existingLabels)) {
+                return;
+            }
+
+            $updateResponse = $this->httpClient->request('PATCH', $this->coolifyApiUrl . '/applications/' . $uuid, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->coolifyToken,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'custom_labels' => $nextLabels,
+                ],
+            ]);
+
+            $updateStatus = $updateResponse->getStatusCode();
+            if ($updateStatus < 200 || $updateStatus >= 300) {
+                $this->logger->warning(sprintf(
+                    'Mise a jour des labels de protection echouee pour %s (HTTP %d).',
+                    $site->getName(),
+                    $updateStatus
+                ));
+                return;
+            }
+
+            $this->logger->info(sprintf(
+                'Protection %s pour "%s" (%s).',
+                $site->isProtected() ? 'activee' : 'desactivee',
+                $site->getName(),
+                $host
+            ));
+        } catch (\Throwable $e) {
+            $this->logger->warning(sprintf(
+                'Impossible de synchroniser la protection Coolify pour "%s": %s',
+                $site->getName(),
+                $e->getMessage()
+            ));
+        }
+    }
+
+    private function buildProtectionLabels(Site $site, string $uuid, string $host): string
+    {
+        $routerSuffix = mb_strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $uuid) ?? $uuid);
+        $routerName = sprintf('akiprotect-%s', trim($routerSuffix, '-'));
+        $middlewareName = sprintf('akiauth-%s', trim($routerSuffix, '-'));
+        $forwardAuthUrl = rtrim($this->appPublicUrl, '/') . '/auth/site-access';
+        $port = (string) ($site->getPort() ?: 80);
+
+        $labels = [
+            'traefik.enable=true',
+            sprintf('traefik.http.routers.%s.rule=Host(`%s`)', $routerName, $host),
+            sprintf('traefik.http.routers.%s.priority=1000', $routerName),
+            sprintf('traefik.http.routers.%s.tls=true', $routerName),
+            sprintf('traefik.http.routers.%s.service=%s', $routerName, $routerName),
+            sprintf('traefik.http.routers.%s.middlewares=%s', $routerName, $middlewareName),
+            sprintf('traefik.http.services.%s.loadbalancer.server.port=%s', $routerName, $port),
+            sprintf('traefik.http.middlewares.%s.forwardauth.address=%s', $middlewareName, $forwardAuthUrl),
+            sprintf('traefik.http.middlewares.%s.forwardauth.trustForwardHeader=true', $middlewareName),
+        ];
+
+        return implode("\n", $labels);
+    }
+
+    private function mergeManagedCustomLabels(string $existingLabels, string $managedLabels): string
+    {
+        $startMarker = '# AKICLOUD-PROTECTION-START';
+        $endMarker = '# AKICLOUD-PROTECTION-END';
+
+        $cleaned = preg_replace(
+            '/' . preg_quote($startMarker, '/') . '.*?' . preg_quote($endMarker, '/') . '/s',
+            '',
+            $existingLabels
+        );
+        $cleaned = trim((string) $cleaned);
+
+        if ($managedLabels === '') {
+            return $cleaned;
+        }
+
+        $block = $startMarker . "\n" . trim($managedLabels) . "\n" . $endMarker;
+
+        return $cleaned === '' ? $block : $cleaned . "\n" . $block;
     }
 
     public function deleteResource(string $uuid): bool

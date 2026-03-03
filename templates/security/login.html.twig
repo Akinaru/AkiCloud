@@ -243,6 +243,9 @@
                 </div>
 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                {% if target_path is defined and target_path %}
+                    <input type="hidden" name="_target_path" value="{{ target_path }}">
+                {% endif %}
 
                 <button type="submit" class="btn-login">
                     <i class="bi bi-box-arrow-in-right"></i>

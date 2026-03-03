@@ -101,4 +101,34 @@ class SiteRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findOneByHost(string $host, string $baseDomain): ?Site
+    {
+        $normalizedHost = mb_strtolower(trim($host));
+        $normalizedHost = preg_replace('/:\d+$/', '', $normalizedHost) ?? $normalizedHost;
+        $normalizedBase = mb_strtolower(trim($baseDomain, '.'));
+
+        $customDomainSite = $this->findOneBy(['customDomain' => $normalizedHost]);
+        if ($customDomainSite instanceof Site) {
+            return $customDomainSite;
+        }
+
+        if ($normalizedHost === '' || $normalizedBase === '') {
+            return null;
+        }
+
+        if (!str_ends_with($normalizedHost, '.' . $normalizedBase)) {
+            return null;
+        }
+
+        $subdomain = substr($normalizedHost, 0, -strlen('.' . $normalizedBase));
+        if ($subdomain === '' || str_contains($subdomain, '.')) {
+            return null;
+        }
+
+        return $this->findOneBy([
+            'subdomain' => $subdomain,
+            'customDomain' => null,
+        ]);
+    }
 }

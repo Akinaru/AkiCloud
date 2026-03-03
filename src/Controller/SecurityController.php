@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\Security\InvitationAcceptType;
+use App\Repository\SettingRepository;
+use App\Repository\SiteRepository;
 use App\Repository\UserInvitationRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,9 +21,25 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(
+        Request $request,
+        AuthenticationUtils $authenticationUtils,
+        SiteRepository $siteRepository,
+        SettingRepository $settingRepository
+    ): Response
     {
+        $targetPath = $this->resolveSafeTargetPath(
+            $request->query->get('next'),
+            $request->getHost(),
+            (string) $settingRepository->getValue('base_domain', 'akinaru.fr'),
+            $siteRepository
+        );
+
         if ($this->getUser()) {
+            if ($targetPath !== null) {
+                return $this->redirect($targetPath);
+            }
+
             return $this->redirectToRoute('app_dashboard');
         }
 
@@ -31,6 +49,7 @@ class SecurityController extends AbstractController
         return $this->render('security/login.html.twig', [
             'last_username' => $lastUsername,
             'error' => $error,
+            'target_path' => $targetPath,
         ]);
     }
 
@@ -112,5 +131,34 @@ class SecurityController extends AbstractController
             'isInvalid' => false,
             'form' => $form,
         ]);
+    }
+
+    private function resolveSafeTargetPath(?string $next, string $appHost, string $baseDomain, SiteRepository $siteRepository): ?string
+    {
+        if (!is_string($next) || trim($next) === '') {
+            return null;
+        }
+
+        $target = trim($next);
+        if (str_starts_with($target, '/')) {
+            return $target;
+        }
+
+        $parts = parse_url($target);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = mb_strtolower((string) ($parts['scheme'] ?? ''));
+        $host = mb_strtolower((string) ($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return null;
+        }
+
+        if ($host === mb_strtolower($appHost)) {
+            return $target;
+        }
+
+        return $siteRepository->findOneByHost($host, $baseDomain) ? $target : null;
     }
 }
