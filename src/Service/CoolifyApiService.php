@@ -61,6 +61,12 @@ class CoolifyApiService
                 'publish_directory' => $publishDirectory,
             ];
 
+            if ($site->isProtected()) {
+                // At creation time the Coolify UUID is not known yet.
+                // Use host as a stable unique key to avoid label collisions.
+                $body['custom_labels'] = $this->buildProtectionLabels($site, $host, $host);
+            }
+
             if ($isLocalVolume) {
                 $body['git_repository'] = self::FACTORY_GIT_REPO;
                 $body['base_directory'] = '/templates_sites/vierge';
