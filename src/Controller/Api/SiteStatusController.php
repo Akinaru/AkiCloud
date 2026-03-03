@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Site;
+use App\Entity\User;
 use App\Repository\SiteRepository;
 use App\Repository\SettingRepository;
 use App\Service\CoolifyApiService;
@@ -28,6 +29,11 @@ class SiteStatusController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $siteIds = $data['ids'] ?? [];
         $baseDomain = (string) $settingRepository->getValue('base_domain', 'akinaru.fr');
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            return $this->json(['sites' => []], 401);
+        }
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
         
         $results = [];
         $changed = false;
@@ -35,6 +41,9 @@ class SiteStatusController extends AbstractController
         foreach ($siteIds as $id) {
             $site = $siteRepository->find($id);
             if (!$site || !$site->getCoolifyUuid()) {
+                continue;
+            }
+            if (!$isAdmin && !$site->isUserAuthorized($currentUser)) {
                 continue;
             }
 

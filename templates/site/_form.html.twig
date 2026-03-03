@@ -1,5 +1,159 @@
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
 {% set isNewSiteForm = app.request.attributes.get('_route') == 'app_site_new' %}
+<style>
+    .access-block {
+        border: 1px solid var(--border);
+        background: #f8f9fd;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-top: 14px;
+    }
+    .access-block-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .access-panel-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .access-panel-count {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--blue);
+        background: #ece8ff;
+        border: 1px solid rgba(143,122,230,.35);
+        border-radius: 999px;
+        padding: 2px 8px;
+    }
+    .access-block .form-select {
+        min-height: 220px;
+    }
+    .access-block-hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-2);
+        line-height: 1.45;
+    }
+    .ua-manager {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+    .ua-col {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+    }
+    .ua-col-hd {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    .ua-search-wrap {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    .ua-search {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 12px;
+        background: #fff;
+        color: var(--text);
+        outline: none;
+    }
+    .ua-search:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(143,122,230,.16);
+    }
+    .ua-list {
+        list-style: none;
+        margin: 0;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow: auto;
+        flex: 1;
+    }
+    .ua-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: #fbfcff;
+    }
+    .ua-item-main {
+        min-width: 0;
+    }
+    .ua-item-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ua-item-email {
+        font-size: 11.5px;
+        color: var(--text-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ua-item-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text-2);
+        border-radius: 7px;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .ua-item-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+    }
+    .ua-item-btn.danger:hover {
+        border-color: var(--red);
+        color: var(--red);
+    }
+    .ua-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    @media (max-width: 980px) {
+        .ua-manager {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 
 {% if isNewSiteForm %}
 <style>
@@ -197,6 +351,18 @@
                 {{ form_label(form.pendingEmailTemplate, 'Email à envoyer en fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
                 {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
             </div>
+
+            <section class="access-block">
+                <div class="access-block-hd">
+                    <div class="access-panel-title">
+                        <i class="bi bi-people" style="color:var(--blue);"></i>Accès utilisateurs
+                    </div>
+                    <span class="access-panel-count" id="authorized-count-new">0 sélectionné</span>
+                </div>
+                {{ form_widget(form.authorizedUsers, {'attr': {'class': 'form-select', 'size': 10}}) }}
+                {{ form_errors(form.authorizedUsers) }}
+                <p class="access-block-hint">Ces utilisateurs verront ce site dans leur middle-office. Tu peux faire une sélection multiple.</p>
+            </section>
         </div>
     </div>
 
@@ -233,6 +399,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const ownerToggle = document.querySelector('input[type="checkbox"][name$="[ownerDifferent]"]');
     const ownerPanel = document.getElementById('owner-fields-panel');
+    const authorizedSelect = document.getElementById('{{ form.authorizedUsers.vars.id }}');
+    const authorizedCount = document.getElementById('authorized-count-new');
 
     function syncOwnerPanel() {
         if (!ownerToggle || !ownerPanel) return;
@@ -245,6 +413,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (gitPanel) gitPanel.style.display = isLocal ? 'none' : '';
         if (localPanel) localPanel.style.display = isLocal ? 'block' : 'none';
         if (gitInput) gitInput.required = !isLocal;
+    }
+
+    function syncAuthorizedCount() {
+        if (!authorizedSelect || !authorizedCount) return;
+        const selected = Array.from(authorizedSelect.selectedOptions).length;
+        authorizedCount.textContent = selected > 1 ? `${selected} sélectionnés` : `${selected} sélectionné`;
     }
 
     function renderStep() {
@@ -298,104 +472,283 @@ document.addEventListener('DOMContentLoaded', function () {
 
     syncOwnerPanel();
     syncSourcePanels();
+    syncAuthorizedCount();
     renderStep();
 
     if (ownerToggle) ownerToggle.addEventListener('change', syncOwnerPanel);
     if (sourceSelect) sourceSelect.addEventListener('change', syncSourcePanels);
+    if (authorizedSelect) authorizedSelect.addEventListener('change', syncAuthorizedCount);
 });
 </script>
 
 {% else %}
 
-<div class="form-card-body">
-    <div class="form-grp">
-        {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
-        {{ form_errors(form.name) }}
+<div class="form-card">
+    <div class="form-card-hd">
+        <div class="form-card-title"><i class="bi bi-pencil-square" style="color:var(--blue);margin-right:8px"></i>Modifier les informations</div>
+        <div class="form-card-sub">Les modifications seront appliquées immédiatement.</div>
     </div>
-
-    <div class="form-row-2">
+    <div class="form-card-body">
         <div class="form-grp">
-            {{ form_label(form.type, 'Runtime', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+            {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.name) }}
         </div>
-        <div class="form-grp">
-            {{ form_label(form.port, 'Port', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.port, {'attr': {'class': 'form-control'}}) }}
-        </div>
-    </div>
 
-    <div class="form-row-2">
-        <div class="form-grp">
-            {{ form_label(form.deploymentSource, 'Source de déploiement', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.deploymentSource, {'attr': {'class': 'form-select'}}) }}
-            {{ form_errors(form.deploymentSource) }}
+        <div class="form-row-2">
+            <div class="form-grp">
+                {{ form_label(form.type, 'Runtime', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+            </div>
+            <div class="form-grp">
+                {{ form_label(form.port, 'Port', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.port, {'attr': {'class': 'form-control'}}) }}
+            </div>
         </div>
-        <div class="form-grp">
-            {{ form_label(form.gitRepository, 'Dépôt Git public', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control', 'placeholder': 'https://github.com/owner/repo.git'}}) }}
-            {{ form_errors(form.gitRepository) }}
+
+        <div class="form-row-2">
+            <div class="form-grp">
+                {{ form_label(form.deploymentSource, 'Source de déploiement', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.deploymentSource, {'attr': {'class': 'form-select'}}) }}
+                {{ form_errors(form.deploymentSource) }}
+            </div>
+            <div class="form-grp">
+                {{ form_label(form.gitRepository, 'Dépôt Git public', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control', 'placeholder': 'https://github.com/owner/repo.git'}}) }}
+                {{ form_errors(form.gitRepository) }}
+            </div>
         </div>
-    </div>
 
-    <div class="form-row-2">
-        <div class="form-grp">
-            {{ form_label(form.customDomain, 'Domaine custom', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.customDomain, {'attr': {'class': 'form-control'}}) }}
+        <div class="form-row-2">
+            <div class="form-grp">
+                {{ form_label(form.customDomain, 'Domaine custom', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.customDomain, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="form-grp">
+                {{ form_label(form.publishDirectory, 'Dossier de publication', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control'}}) }}
+            </div>
         </div>
+
         <div class="form-grp">
-            {{ form_label(form.publishDirectory, 'Dossier de publication', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control'}}) }}
+            {{ form_label(form.pendingEmailTemplate, 'Email de fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
         </div>
-    </div>
 
-    <div class="form-grp">
-        {{ form_label(form.pendingEmailTemplate, 'Email de fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
-    </div>
+        <div class="form-grp" style="margin-top: 10px;">
+            <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                {{ form_widget(form.createDatabase) }}
+                <span class="form-label" style="margin:0;">Créer une base de données liée</span>
+            </label>
+        </div>
 
-    <div class="form-grp" style="margin-top: 10px;">
-        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            {{ form_widget(form.createDatabase) }}
-            <span class="form-label" style="margin:0;">Créer une base de données liée</span>
-        </label>
-    </div>
+        <div class="form-grp" style="margin-top: 10px;">
+            <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                {{ form_widget(form.ownerDifferent) }}
+                <span class="form-label" style="margin:0;">Le propriétaire est différent de moi</span>
+            </label>
+        </div>
 
-    <div class="form-grp" style="margin-top: 10px;">
-        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            {{ form_widget(form.ownerDifferent) }}
-            <span class="form-label" style="margin:0;">Le propriétaire est différent de moi</span>
-        </label>
-    </div>
+        <div class="form-row-2">
+            <div class="form-grp">
+                {{ form_label(form.ownerFirstname, 'Prénom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.ownerFirstname) }}
+            </div>
+            <div class="form-grp">
+                {{ form_label(form.ownerLastname, 'Nom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.ownerLastname) }}
+            </div>
+        </div>
 
-    <div class="form-row-2">
         <div class="form-grp">
-            {{ form_label(form.ownerFirstname, 'Prénom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(form.ownerFirstname) }}
+            {{ form_label(form.ownerEmail, 'Email propriétaire', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.ownerEmail) }}
         </div>
-        <div class="form-grp">
-            {{ form_label(form.ownerLastname, 'Nom propriétaire', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(form.ownerLastname) }}
-        </div>
-    </div>
-
-    <div class="form-grp">
-        {{ form_label(form.ownerEmail, 'Email propriétaire', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control'}}) }}
-        {{ form_errors(form.ownerEmail) }}
     </div>
 </div>
 
-<div class="form-card-ft">
-    <a href="{{ path('app_site_index') }}" class="btn btn-ghost">
-        <i class="bi bi-arrow-left"></i>Annuler
-    </a>
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-check-lg"></i>{{ button_label|default('Enregistrer') }}
-    </button>
+<div class="form-card" style="margin-top:18px;">
+    <div class="form-card-hd">
+        <div class="form-card-title"><i class="bi bi-people" style="color:var(--blue);margin-right:8px"></i>Gestion des utilisateurs</div>
+        <div class="form-card-sub">Choisis qui peut accéder à ce site dans le middle-office.</div>
+    </div>
+    <div class="form-card-body">
+        <section class="access-block" style="margin-top:0;">
+            <div class="access-block-hd">
+                <div class="access-panel-title">
+                    <i class="bi bi-person-check" style="color:var(--blue);"></i>Utilisateurs autorisés
+                </div>
+                <span class="access-panel-count" id="authorized-count-edit">0 sélectionné</span>
+            </div>
+
+            {{ form_widget(form.authorizedUsers, {'attr': {'class': 'js-authorized-users-native', 'style': 'display:none;', 'size': 10}}) }}
+            {{ form_errors(form.authorizedUsers) }}
+
+            <div class="ua-manager">
+                <div class="ua-col">
+                    <div class="ua-col-hd">
+                        <span>Tous les utilisateurs</span>
+                        <span id="ua-available-count">0</span>
+                    </div>
+                    <div class="ua-search-wrap">
+                        <input type="text" class="ua-search" id="ua-search" placeholder="Rechercher par nom ou email...">
+                    </div>
+                    <ul class="ua-list" id="ua-available-list"></ul>
+                </div>
+                <div class="ua-col">
+                    <div class="ua-col-hd">
+                        <span>Accès accordés</span>
+                        <span id="ua-selected-count">0</span>
+                    </div>
+                    <ul class="ua-list" id="ua-selected-list"></ul>
+                </div>
+            </div>
+            <div class="ua-tools">
+                <button type="button" class="btn btn-secondary btn-sm" id="ua-add-filtered">
+                    <i class="bi bi-plus-lg"></i>Ajouter les filtrés
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" id="ua-clear-all">
+                    <i class="bi bi-x-circle"></i>Tout retirer
+                </button>
+            </div>
+            <p class="access-block-hint">Recherche instantanée, ajout/retrait en un clic. La sélection est synchronisée automatiquement avec le formulaire.</p>
+        </section>
+    </div>
+    <div class="form-card-ft">
+        <a href="{{ path('app_site_index') }}" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>Annuler
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i>{{ button_label|default('Enregistrer') }}
+        </button>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nativeSelect = document.getElementById('{{ form.authorizedUsers.vars.id }}');
+    const mainCount = document.getElementById('authorized-count-edit');
+    const availableCount = document.getElementById('ua-available-count');
+    const selectedCount = document.getElementById('ua-selected-count');
+    const availableList = document.getElementById('ua-available-list');
+    const selectedList = document.getElementById('ua-selected-list');
+    const searchInput = document.getElementById('ua-search');
+    const addFilteredBtn = document.getElementById('ua-add-filtered');
+    const clearAllBtn = document.getElementById('ua-clear-all');
+
+    if (!nativeSelect || !mainCount || !availableList || !selectedList) return;
+
+    const users = Array.from(nativeSelect.options).map(function (option) {
+        const label = option.textContent || '';
+        const match = label.match(/^(.*)\s+\(([^)]+)\)$/);
+        const name = match ? match[1] : label;
+        const email = match ? match[2] : '';
+        return {
+            value: option.value,
+            name: name,
+            email: email,
+            search: (name + ' ' + email).toLowerCase()
+        };
+    });
+
+    function setSelected(userId, selected) {
+        const option = Array.from(nativeSelect.options).find(function (opt) { return opt.value === userId; });
+        if (option) option.selected = selected;
+    }
+
+    function isSelected(userId) {
+        const option = Array.from(nativeSelect.options).find(function (opt) { return opt.value === userId; });
+        return !!option && option.selected;
+    }
+
+    function getSearchTerm() {
+        return (searchInput?.value || '').trim().toLowerCase();
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderLists() {
+        const term = getSearchTerm();
+        const available = users.filter(function (u) { return !isSelected(u.value) && (term === '' || u.search.includes(term)); });
+        const selected = users.filter(function (u) { return isSelected(u.value); });
+
+        availableList.innerHTML = available.map(function (u) {
+            return `
+                <li class="ua-item">
+                    <div class="ua-item-main">
+                        <div class="ua-item-name">${escapeHtml(u.name)}</div>
+                        <div class="ua-item-email">${escapeHtml(u.email)}</div>
+                    </div>
+                    <button type="button" class="ua-item-btn" data-action="add" data-user="${u.value}" title="Ajouter">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </li>
+            `;
+        }).join('');
+
+        selectedList.innerHTML = selected.map(function (u) {
+            return `
+                <li class="ua-item">
+                    <div class="ua-item-main">
+                        <div class="ua-item-name">${escapeHtml(u.name)}</div>
+                        <div class="ua-item-email">${escapeHtml(u.email)}</div>
+                    </div>
+                    <button type="button" class="ua-item-btn danger" data-action="remove" data-user="${u.value}" title="Retirer">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </li>
+            `;
+        }).join('');
+
+        mainCount.textContent = selected.length > 1 ? `${selected.length} sélectionnés` : `${selected.length} sélectionné`;
+        if (availableCount) availableCount.textContent = String(available.length);
+        if (selectedCount) selectedCount.textContent = String(selected.length);
+    }
+
+    availableList.addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-action="add"]');
+        if (!btn) return;
+        setSelected(btn.getAttribute('data-user'), true);
+        renderLists();
+    });
+
+    selectedList.addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-action="remove"]');
+        if (!btn) return;
+        setSelected(btn.getAttribute('data-user'), false);
+        renderLists();
+    });
+
+    searchInput?.addEventListener('input', renderLists);
+
+    addFilteredBtn?.addEventListener('click', function () {
+        const term = getSearchTerm();
+        users.forEach(function (u) {
+            if (!isSelected(u.value) && (term === '' || u.search.includes(term))) {
+                setSelected(u.value, true);
+            }
+        });
+        renderLists();
+    });
+
+    clearAllBtn?.addEventListener('click', function () {
+        users.forEach(function (u) { setSelected(u.value, false); });
+        renderLists();
+    });
+
+    renderLists();
+});
+</script>
 
 {% endif %}
 

@@ -53,15 +53,17 @@
     <div class="page-hd">
         <div>
             <div class="page-title">{{ site.name }}</div>
-            <div class="page-sub">Détails et gestion de l'instance.</div>
+            <div class="page-sub">{{ canManage ? "Détails et gestion de l'instance." : "Middle-office: détails du site autorisé." }}</div>
         </div>
         <div style="display:flex;gap:8px">
             <a href="https://{{ site.getFullUrl(base_domain) }}" target="_blank" class="btn btn-secondary">
                 <i class="bi bi-box-arrow-up-right"></i>Voir le site
             </a>
+            {% if canManage %}
             <a href="{{ path('app_site_edit', {'id': site.id}) }}" class="btn btn-secondary">
                 <i class="bi bi-pencil"></i>Éditer
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -104,6 +106,10 @@
                         <span class="badge badge-type">{{ site.type }}</span>
                     </div>
                     <div class="info-row">
+                        <span class="info-lbl">Utilisateurs</span>
+                        <span class="info-val"><i class="bi bi-people" style="margin-right:5px;"></i>{{ site.authorizedUsers|length }}</span>
+                    </div>
+                    <div class="info-row">
                         <span class="info-lbl">Port</span>
                         <span class="port-mono">:{{ site.port }}</span>
                     </div>
@@ -132,6 +138,7 @@
             </div>
             {% endif %}
 
+            {% if canManage %}
             <div class="detail-actions-card">
                 <div class="detail-act-title">Contrôle de l'instance</div>
                 <div class="detail-act-list" style="margin-bottom: 20px;">
@@ -177,6 +184,7 @@
                     </button>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- Main content -->
@@ -235,7 +243,7 @@
                 </div>
             </div>
 
-            {% if site.dbName %}
+            {% if canManage and site.dbName %}
             <div class="detail-main-card" style="margin-top: 24px;">
                 <div class="detail-main-hd">
                     <div class="detail-main-title"><i class="bi bi-database-fill" style="margin-right: 8px; color: var(--blue);"></i>Base de données liée</div>
@@ -277,7 +285,7 @@
             </div>
             {% endif %}
 
-            {% if site.type == 'wordpress' and site.wpAdminUser %}
+            {% if canManage and site.type == 'wordpress' and site.wpAdminUser %}
             <div class="detail-main-card" style="margin-top: 24px;">
                 <div class="detail-main-hd">
                     <div class="detail-main-title"><i class="bi bi-person-fill-gear" style="margin-right: 8px; color: var(--blue);"></i>Compte administrateur WordPress</div>
@@ -391,6 +399,7 @@
         </div>
     </div>
 
+    {% if canManage %}
     <!-- Delete modal -->
     <div class="modal-bg" id="modal-delete">
         <div class="modal-box">
@@ -408,10 +417,12 @@
             </div>
         </div>
     </div>
+    {% endif %}
 {% endblock %}
 
 {% block javascripts %}
 {{ parent() }}
+{% if canManage %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const siteId = {{ site.id }};
@@ -648,4 +659,5 @@
         }
     });
 </script>
+{% endif %}
 {% endblock %}

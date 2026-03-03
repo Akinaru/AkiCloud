@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Site;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -52,5 +53,52 @@ class SiteRepository extends ServiceEntityRepository
             'items' => $queryBuilder->getQuery()->getResult(),
             'total' => $this->count([]),
         ];
+    }
+
+    public function findWithPaginationForUser(User $user, int $page, int $limit, string $sort, string $direction): array
+    {
+        $queryBuilder = $this->createQueryBuilder('s')
+            ->innerJoin('s.authorizedUsers', 'u')
+            ->andWhere('u = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.' . $sort, $direction)
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        $countQb = $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->innerJoin('s.authorizedUsers', 'u')
+            ->andWhere('u = :user')
+            ->setParameter('user', $user);
+
+        return [
+            'items' => $queryBuilder->getQuery()->getResult(),
+            'total' => (int) $countQb->getQuery()->getSingleScalarResult(),
+        ];
+    }
+
+    public function countAccessibleForUser(User $user): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->innerJoin('s.authorizedUsers', 'u')
+            ->andWhere('u = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return Site[]
+     */
+    public function findAccessibleForUser(User $user): array
+    {
+        return $this->createQueryBuilder('s')
+            ->innerJoin('s.authorizedUsers', 'u')
+            ->andWhere('u = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.id', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

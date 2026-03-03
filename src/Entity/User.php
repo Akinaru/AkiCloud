@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -37,9 +39,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /**
+     * @var Collection<int, Site>
+     */
+    #[ORM\ManyToMany(targetEntity: Site::class, mappedBy: 'authorizedUsers')]
+    private Collection $accessibleSites;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->accessibleSites = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -139,6 +148,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Site>
+     */
+    public function getAccessibleSites(): Collection
+    {
+        return $this->accessibleSites;
+    }
+
+    public function addAccessibleSite(Site $site): static
+    {
+        if (!$this->accessibleSites->contains($site)) {
+            $this->accessibleSites->add($site);
+            $site->addAuthorizedUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAccessibleSite(Site $site): static
+    {
+        if ($this->accessibleSites->removeElement($site)) {
+            $site->removeAuthorizedUser($this);
+        }
 
         return $this;
     }

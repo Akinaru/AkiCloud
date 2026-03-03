@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/site')]
 final class SiteController extends AbstractController
@@ -29,6 +30,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/new', name: 'app_site_new', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
@@ -184,6 +186,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/wp-change-password', name: 'app_site_wp_change_password', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function wpChangePassword(
         Request $request,
         Site $site,
@@ -210,6 +213,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/wp-change-password-usmb', name: 'app_site_wp_change_password_usmb', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function wpChangePasswordUsmb(
         Request $request,
         Site $site,
@@ -232,6 +236,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/bulk-action', name: 'app_site_bulk_action', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function bulkAction(Request $request, SiteRepository $siteRepository, CoolifyApiService $coolifyApi, EntityManagerInterface $entityManager, EventLoggerService $logger): Response
     {
         $ids = $request->request->all('ids');
@@ -304,6 +309,12 @@ final class SiteController extends AbstractController
     #[Route(name: 'app_site_index', methods: ['GET'])]
     public function index(Request $request, SiteRepository $siteRepository, SettingRepository $settingRepository): Response
     {
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw $this->createAccessDeniedException('Authentification requise.');
+        }
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
         $page = $request->query->getInt('page', 1);
         $limit = $request->query->getInt('limit', 25);
         $sort = $request->query->get('sort', 'id');
@@ -316,12 +327,15 @@ final class SiteController extends AbstractController
             $direction = 'DESC';
         }
 
-        $result = $siteRepository->findWithPagination($page, $limit, $sort, $direction);
+        $result = $isAdmin
+            ? $siteRepository->findWithPagination($page, $limit, $sort, $direction)
+            : $siteRepository->findWithPaginationForUser($currentUser, $page, $limit, $sort, $direction);
         $totalSites = $result['total'];
         $totalPages = ceil($totalSites / $limit);
 
         return $this->render('site/index.html.twig', [
             'sites' => $result['items'],
+            'canManage' => $isAdmin,
             'base_domain' => $settingRepository->getValue('base_domain', 'cloud.fac-info.fr'),
             'currentPage' => $page,
             'limit' => $limit,
@@ -335,13 +349,25 @@ final class SiteController extends AbstractController
     #[Route('/{id}', name: 'app_site_show', methods: ['GET'])]
     public function show(Site $site, SettingRepository $settingRepository): Response
     {
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw $this->createAccessDeniedException('Authentification requise.');
+        }
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        if (!$isAdmin && !$site->isUserAuthorized($currentUser)) {
+            throw $this->createAccessDeniedException('Vous n avez pas accès à ce site.');
+        }
+
         return $this->render('site/show.html.twig', [
             'site' => $site,
+            'canManage' => $isAdmin,
             'base_domain' => $settingRepository->getValue('base_domain', 'cloud.fac-info.fr'),
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_site_edit', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(Request $request, Site $site, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(SiteType::class, $site);
@@ -360,6 +386,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_site_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(Request $request, Site $site, EntityManagerInterface $entityManager, EventLoggerService $logger, CoolifyApiService $coolifyApi): Response
     {
         if ($this->isCsrfTokenValid('delete' . $site->getId(), $request->getPayload()->getString('_token'))) {
@@ -379,6 +406,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/start', name: 'app_site_start', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function start(Request $request, Site $site, CoolifyApiService $coolifyApi, EntityManagerInterface $entityManager): Response
     {
         if ($site->getCoolifyUuid()) {
@@ -397,6 +425,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/stop', name: 'app_site_stop', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function stop(Request $request, Site $site, CoolifyApiService $coolifyApi, EntityManagerInterface $entityManager): Response
     {
         if ($site->getCoolifyUuid()) {
@@ -415,6 +444,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/restart', name: 'app_site_restart', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function restart(Request $request, Site $site, CoolifyApiService $coolifyApi, EntityManagerInterface $entityManager): Response
     {
         if ($site->getCoolifyUuid()) {
@@ -433,6 +463,7 @@ final class SiteController extends AbstractController
     }
 
     #[Route('/{id}/redeploy', name: 'app_site_redeploy', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function redeploy(Request $request, Site $site, CoolifyApiService $coolifyApi, EntityManagerInterface $entityManager): Response
     {
         if ($site->getCoolifyUuid()) {

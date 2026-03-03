@@ -1,6 +1,15 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}Éditer — {{ site.name }}{% endblock %}
+{% block stylesheets %}
+<style>
+    .site-edit-screen .form-card,
+    .site-edit-screen .danger-zone {
+        max-width: none;
+        width: 100%;
+    }
+</style>
+{% endblock %}
 
 {% block breadcrumb %}
     <span class="bc-item">AkiCloud</span>
@@ -13,6 +22,7 @@
 {% endblock %}
 
 {% block body %}
+    <div class="site-edit-screen">
     <a href="{{ path('app_site_show', {'id': site.id}) }}" class="back-link">
         <i class="bi bi-arrow-left"></i>Retour au site
     </a>
@@ -24,13 +34,7 @@
         </div>
     </div>
 
-    <div class="form-card">
-        <div class="form-card-hd">
-            <div class="form-card-title"><i class="bi bi-pencil-square" style="color:var(--blue);margin-right:8px"></i>Modifier les informations</div>
-            <div class="form-card-sub">Les modifications seront appliquées immédiatement.</div>
-        </div>
-        {{ include('site/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
-    </div>
+    {{ include('site/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
 
     <div class="danger-zone">
         <div class="danger-zone-hd">
@@ -64,5 +68,6 @@
                 {{ include('site/_delete_form.html.twig') }}
             </div>
         </div>
+    </div>
     </div>
 {% endblock %}

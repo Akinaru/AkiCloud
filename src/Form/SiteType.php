@@ -3,11 +3,13 @@
 namespace App\Form;
 
 use App\Entity\Site;
+use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class SiteType extends AbstractType
@@ -71,6 +73,18 @@ class SiteType extends AbstractType
                 'label' => 'Modèle d\'email de notification',
                 'placeholder' => 'Ne pas envoyer d\'email',
                 'required' => false,
+            ])
+            ->add('authorizedUsers', EntityType::class, [
+                'class' => User::class,
+                'label' => 'Utilisateurs autorisés',
+                'choice_label' => fn (User $user) => sprintf('%s (%s)', $user->getFullName(), $user->getEmail()),
+                'multiple' => true,
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-select',
+                    'size' => 8,
+                ],
+                'help' => 'Les utilisateurs sélectionnés verront ce site dans leur middle-office.',
             ])
         ;
     }

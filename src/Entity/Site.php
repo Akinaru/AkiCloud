@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SiteRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 
@@ -103,6 +105,18 @@ class Site
 
     #[ORM\ManyToOne]
     private ?EmailTemplate $pendingEmailTemplate = null;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'accessibleSites')]
+    #[ORM\JoinTable(name: 'site_user_access')]
+    private Collection $authorizedUsers;
+
+    public function __construct()
+    {
+        $this->authorizedUsers = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -461,5 +475,34 @@ class Site
         $this->wpUsmbAdminPassword = $wpUsmbAdminPassword;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getAuthorizedUsers(): Collection
+    {
+        return $this->authorizedUsers;
+    }
+
+    public function addAuthorizedUser(User $user): static
+    {
+        if (!$this->authorizedUsers->contains($user)) {
+            $this->authorizedUsers->add($user);
+        }
+
+        return $this;
+    }
+
+    public function removeAuthorizedUser(User $user): static
+    {
+        $this->authorizedUsers->removeElement($user);
+
+        return $this;
+    }
+
+    public function isUserAuthorized(User $user): bool
+    {
+        return $this->authorizedUsers->contains($user);
     }
 }
