@@ -10,6 +10,9 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 #[ORM\HasLifecycleCallbacks]
 class Site
 {
+    public const SOURCE_GIT_PUBLIC = 'git_public';
+    public const SOURCE_LOCAL_VOLUME = 'local_volume';
+
     public const STATUS_BUILDING = 'building';
     public const STATUS_RUNNING = 'running';
     public const STATUS_STOPPED = 'stopped';
@@ -43,6 +46,18 @@ class Site
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $publishDirectory = null;
+
+    #[ORM\Column(length: 30)]
+    private string $deploymentSource = self::SOURCE_GIT_PUBLIC;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $customDomain = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $localVolumePath = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $createDatabase = true;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $coolifyUuid = null;
@@ -251,11 +266,81 @@ class Site
 
     public function getFullUrl(string $baseDomain = 'cloud.fac-info.fr'): string
     {
+        if ($this->customDomain) {
+            return $this->normalizeHost($this->customDomain);
+        }
+
         if (!$this->subdomain) {
             return '';
         }
 
         return $this->subdomain . '.' . $baseDomain;
+    }
+
+    public function getDeploymentSource(): string
+    {
+        return $this->deploymentSource;
+    }
+
+    public function setDeploymentSource(string $deploymentSource): static
+    {
+        $this->deploymentSource = $deploymentSource;
+
+        return $this;
+    }
+
+    public function getCustomDomain(): ?string
+    {
+        return $this->customDomain;
+    }
+
+    public function setCustomDomain(?string $customDomain): static
+    {
+        $this->customDomain = $this->normalizeHost($customDomain);
+
+        return $this;
+    }
+
+    public function getLocalVolumePath(): ?string
+    {
+        return $this->localVolumePath;
+    }
+
+    public function setLocalVolumePath(?string $localVolumePath): static
+    {
+        $this->localVolumePath = $localVolumePath;
+
+        return $this;
+    }
+
+    public function isCreateDatabase(): bool
+    {
+        return $this->createDatabase;
+    }
+
+    public function setCreateDatabase(bool $createDatabase): static
+    {
+        $this->createDatabase = $createDatabase;
+
+        return $this;
+    }
+
+    private function normalizeHost(?string $host): ?string
+    {
+        if ($host === null) {
+            return null;
+        }
+
+        $value = trim($host);
+        if ($value === '') {
+            return null;
+        }
+
+        $value = preg_replace('#^https?://#i', '', $value) ?? $value;
+        $value = preg_replace('#/.*$#', '', $value) ?? $value;
+        $value = trim($value, '.');
+
+        return $value !== '' ? mb_strtolower($value) : null;
     }
 
     public function getOwnerFirstname(): ?string

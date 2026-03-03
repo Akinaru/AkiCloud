@@ -110,6 +110,10 @@ final class UserController extends AbstractController
                 'invite_url' => $inviteUrl,
                 'expires_at' => $invitation->getExpiresAt(),
             ]);
+            $textBody = "Invitation AkiCloud\n\n"
+                . "Vous avez été invité à créer votre compte AkiCloud.\n"
+                . "Créer mon compte: {$inviteUrl}\n"
+                . 'Ce lien expire le ' . $invitation->getExpiresAt()?->format('d/m/Y H:i') . ".\n";
 
             $brevoApiKey = trim((string) ($_ENV['BREVO_API_KEY'] ?? $_SERVER['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?: ''));
             if ($brevoApiKey !== '') {
@@ -130,6 +134,12 @@ final class UserController extends AbstractController
                             ],
                             'subject' => $subject,
                             'htmlContent' => $htmlBody,
+                            'textContent' => $textBody,
+                            'headers' => [
+                                'X-Mailin-track' => '0',
+                                'X-Mailin-track-opens' => '0',
+                                'X-Mailin-track-clicks' => '0',
+                            ],
                         ],
                         'timeout' => 20,
                     ]);
@@ -153,7 +163,8 @@ final class UserController extends AbstractController
                 ->from($fromEmail)
                 ->to($email)
                 ->subject($subject)
-                ->html($htmlBody);
+                ->html($htmlBody)
+                ->text($textBody);
 
             try {
                 $mailer->send($mail);

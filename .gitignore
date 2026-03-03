@@ -5,8 +5,6 @@
 ###< IDE ###
 
 ###> symfony/framework-bundle ###
-.env
-/.env
 /.env.local
 /.env.local.php
 /.env.*.local

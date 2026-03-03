@@ -32,13 +32,15 @@ class CoolifyApiService
         try {
             $this->logger->info(sprintf('Creation mode Git prive (%s)', $type));
 
+            $isLocalVolume = $site->getDeploymentSource() === Site::SOURCE_LOCAL_VOLUME;
             $hasCustomRepository = (bool) $site->getGitRepository();
             $gitRepository = (string) ($hasCustomRepository ? $site->getGitRepository() : self::FACTORY_GIT_REPO);
             $publishDirectory = (string) ($site->getPublishDirectory() ?: '/');
             $isStatic = $type === 'static';
-            $baseDirectory = $hasCustomRepository ? '/' : '/templates_sites/vierge';
+            $baseDirectory = ($hasCustomRepository || $isLocalVolume) ? '/' : '/templates_sites/vierge';
             $baseDomain = $this->normalizeBaseDomain((string) $this->settingRepository->getValue('base_domain', 'akinaru.fr'));
-            $domain = sprintf('https://%s.%s', (string) $site->getSubdomain(), $baseDomain);
+            $host = $site->getFullUrl($baseDomain);
+            $domain = sprintf('https://%s', $host);
 
             $body = [
                 'name' => $site->getName(),
@@ -57,6 +59,11 @@ class CoolifyApiService
                 'base_directory' => $baseDirectory,
                 'publish_directory' => $publishDirectory,
             ];
+
+            if ($isLocalVolume) {
+                $body['git_repository'] = self::FACTORY_GIT_REPO;
+                $body['base_directory'] = '/templates_sites/vierge';
+            }
 
             $response = $this->httpClient->request('POST', $this->coolifyApiUrl . '/applications/private-deploy-key', [
                 'headers' => [

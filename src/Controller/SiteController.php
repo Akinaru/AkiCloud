@@ -7,11 +7,13 @@ use App\Form\SiteType;
 use App\Repository\SettingRepository;
 use App\Repository\SiteRepository;
 use App\Service\CoolifyApiService;
+use App\Service\DatabaseManager;
 use App\Service\EventLoggerService;
 use App\Entity\User;
 use App\Service\WordPressConfigService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,18 +32,70 @@ final class SiteController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
+        SettingRepository $settingRepository,
+        SiteRepository $siteRepository,
         CoolifyApiService $coolifyApi,
+        DatabaseManager $databaseManager,
         EventLoggerService $logger
     ): Response {
         $site = new Site();
         $site->setStatus(Site::STATUS_BUILDING);
         $site->setPort(80);
         $site->setPublishDirectory('/');
+        $site->setCreateDatabase(true);
 
         $form = $this->createForm(SiteType::class, $site);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $baseDomain = (string) $settingRepository->getValue('base_domain', 'cloud.akinaru.fr');
+            $customDomain = $this->normalizeHost($site->getCustomDomain());
+            $site->setCustomDomain($customDomain);
+
+            $effectiveDomain = $customDomain ?: $site->getFullUrl($baseDomain);
+            if (!$effectiveDomain) {
+                $this->addFlash('error', 'Impossible de résoudre le domaine du site.');
+                return $this->redirectToRoute('app_site_new');
+            }
+
+            if ($customDomain) {
+                $existingDomainSite = $siteRepository->findOneBy(['customDomain' => $customDomain]);
+                if ($existingDomainSite) {
+                    $this->addFlash('error', 'Ce nom de domaine custom est déjà utilisé.');
+                    return $this->redirectToRoute('app_site_new');
+                }
+            } else {
+                $existingSubdomainSite = $siteRepository->findOneBy(['subdomain' => $site->getSubdomain(), 'customDomain' => null]);
+                if ($existingSubdomainSite) {
+                    $this->addFlash('error', 'Ce nom de site génère un sous-domaine déjà utilisé. Choisis un autre nom.');
+                    return $this->redirectToRoute('app_site_new');
+                }
+            }
+
+            if ($site->getDeploymentSource() === Site::SOURCE_GIT_PUBLIC) {
+                $repo = trim((string) $site->getGitRepository());
+                if ($repo === '') {
+                    $this->addFlash('error', 'Le dépôt Git public est requis pour le mode Git.');
+                    return $this->redirectToRoute('app_site_new');
+                }
+                if (!preg_match('/^(https?:\/\/|git@).+/i', $repo)) {
+                    $this->addFlash('error', 'Le dépôt Git doit être une URL publique valide (https://... ou git@...).');
+                    return $this->redirectToRoute('app_site_new');
+                }
+                $site->setGitRepository($repo);
+            } else {
+                $site->setGitRepository(null);
+                $volumePath = '/var/www/akicloud/' . $effectiveDomain;
+                $site->setLocalVolumePath($volumePath);
+                try {
+                    $this->ensureLocalVolumeScaffold($volumePath, $site->getName() ?? 'Projet');
+                } catch (\Throwable $e) {
+                    $logger->error(sprintf('Création volume local échouée pour "%s": %s', $site->getName(), $e->getMessage()));
+                    $this->addFlash('error', 'Impossible de créer le volume local: vérifie les permissions sur /var/www/akicloud.');
+                    return $this->redirectToRoute('app_site_new');
+                }
+            }
+
             $ownerDifferent = (bool) $form->get('ownerDifferent')->getData();
             if (!$ownerDifferent) {
                 $currentUser = $this->getUser();
@@ -54,6 +108,15 @@ final class SiteController extends AbstractController
 
             $entityManager->persist($site);
             $entityManager->flush();
+
+            if ($site->isCreateDatabase()) {
+                try {
+                    $databaseManager->createDatabase($site);
+                } catch (\Throwable $e) {
+                    $logger->error(sprintf('Création base échouée pour "%s": %s', $site->getName(), $e->getMessage()));
+                    $this->addFlash('warning', 'Site créé, mais la base de données n a pas pu être créée.');
+                }
+            }
 
             $result = $coolifyApi->deploy($site);
             if (($result['status'] ?? 'error') === 'success' && isset($result['uuid'])) {
@@ -80,6 +143,44 @@ final class SiteController extends AbstractController
             'site' => $site,
             'form' => $form,
         ]);
+    }
+
+    private function normalizeHost(?string $host): ?string
+    {
+        if ($host === null) {
+            return null;
+        }
+
+        $value = trim($host);
+        if ($value === '') {
+            return null;
+        }
+
+        $value = preg_replace('#^https?://#i', '', $value) ?? $value;
+        $value = preg_replace('#/.*$#', '', $value) ?? $value;
+        $value = trim($value, '.');
+
+        return $value !== '' ? mb_strtolower($value) : null;
+    }
+
+    private function ensureLocalVolumeScaffold(string $path, string $siteName): void
+    {
+        $fs = new Filesystem();
+        if (!$fs->exists($path)) {
+            $fs->mkdir($path, 0775);
+        }
+
+        $indexPath = rtrim($path, '/') . '/index.html';
+        if ($fs->exists($indexPath)) {
+            return;
+        }
+
+        $content = '<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'
+            . htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8')
+            . '</title><style>body{margin:0;font-family:Arial,sans-serif;background:#1a1a1a;color:#ecdbba;display:flex;min-height:100vh;align-items:center;justify-content:center}main{max-width:680px;padding:28px;text-align:center;border:1px solid #2d4263;background:#191919;border-radius:12px}h1{margin:0 0 10px;font-size:26px;color:#ecdbba}p{margin:0;color:#bfb09c}code{color:#c84b31}</style></head><body><main><h1>Projet en construction</h1><p>Le dossier local est prêt: <code>'
+            . htmlspecialchars($path, ENT_QUOTES, 'UTF-8')
+            . '</code></p></main></body></html>';
+        $fs->dumpFile($indexPath, $content);
     }
 
     #[Route('/{id}/wp-change-password', name: 'app_site_wp_change_password', methods: ['POST'])]

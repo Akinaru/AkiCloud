@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class SiteType extends AbstractType
@@ -26,15 +27,31 @@ class SiteType extends AbstractType
                     'Statique' => 'static',
                 ],
             ])
+            ->add('deploymentSource', ChoiceType::class, [
+                'label' => 'Source de déploiement',
+                'choices' => [
+                    'Git public' => Site::SOURCE_GIT_PUBLIC,
+                    'Volume local machine' => Site::SOURCE_LOCAL_VOLUME,
+                ],
+            ])
             ->add('gitRepository', null, [
-                'label' => 'Dépôt Git personnalisé',
+                'label' => 'Dépôt Git public',
                 'required' => false,
-                'attr' => ['placeholder' => 'Optionnel - ex: git@github.com:owner/repo.git'],
+                'attr' => ['placeholder' => 'https://github.com/owner/repo.git'],
+            ])
+            ->add('customDomain', TextType::class, [
+                'label' => 'Nom de domaine custom',
+                'required' => false,
+                'attr' => ['placeholder' => 'ex: app.mondomaine.fr'],
             ])
             ->add('publishDirectory', null, [
                 'label' => 'Dossier de publication',
                 'required' => false,
                 'attr' => ['placeholder' => '/'],
+            ])
+            ->add('createDatabase', CheckboxType::class, [
+                'required' => false,
+                'label' => 'Créer une base de données liée au site',
             ])
             ->add('ownerDifferent', CheckboxType::class, [
                 'mapped' => false,

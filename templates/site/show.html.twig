@@ -94,8 +94,10 @@
                         </span>
                     </div>
                     <div class="info-row">
-                        <span class="info-lbl">Sous-domaine</span>
-                        <span class="info-val">{{ site.subdomain }}</span>
+                        <span class="info-lbl">Domaine</span>
+                        <span class="info-val" style="font-size: 12px; word-break: break-all;">
+                            {{ site.customDomain ?: site.getFullUrl(base_domain) }}
+                        </span>
                     </div>
                     <div class="info-row">
                         <span class="info-lbl">Type</span>
@@ -194,8 +196,12 @@
                             <span class="detail-prop-val" style="font-size:13px;word-break:break-all">{{ site.getFullUrl(base_domain) }}</span>
                         </div>
                         <div class="detail-prop">
+                            <span class="detail-prop-lbl">Source</span>
+                            <span class="detail-prop-val">{{ site.deploymentSource == 'local_volume' ? 'Volume local' : 'Git public' }}</span>
+                        </div>
+                        <div class="detail-prop">
                             <span class="detail-prop-lbl">Dépôt Git</span>
-                            <span class="detail-prop-val" style="font-size:12px">{{ site.gitRepository ?? 'Aucun' }}</span>
+                            <span class="detail-prop-val" style="font-size:12px">{{ site.gitRepository ?: '—' }}</span>
                         </div>
                         <div class="detail-prop">
                             <span class="detail-prop-lbl">Type de stack</span>
@@ -219,14 +225,20 @@
                             <span class="detail-prop-lbl">Identifiant</span>
                             <span class="detail-prop-val">#{{ site.id }}</span>
                         </div>
+                        {% if site.localVolumePath %}
+                        <div class="detail-prop">
+                            <span class="detail-prop-lbl">Volume local</span>
+                            <span class="detail-prop-val" style="font-size:12px;word-break:break-all">{{ site.localVolumePath }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            {% if site.type == 'wordpress' and site.dbName %}
+            {% if site.dbName %}
             <div class="detail-main-card" style="margin-top: 24px;">
                 <div class="detail-main-hd">
-                    <div class="detail-main-title"><i class="bi bi-database-fill" style="margin-right: 8px; color: var(--blue);"></i>Base de données WordPress</div>
+                    <div class="detail-main-title"><i class="bi bi-database-fill" style="margin-right: 8px; color: var(--blue);"></i>Base de données liée</div>
                 </div>
                 <div class="detail-main-body">
                     <div class="detail-prop-grid">
@@ -259,7 +271,7 @@
                     </div>
                     <div class="info-box" style="margin-top: 20px;">
                         <i class="bi bi-info-circle-fill"></i>
-                        <span>Ces informations ont été automatiquement configurées dans votre instance WordPress.</span>
+                        <span>Ces informations ont été générées automatiquement pour ce site.</span>
                     </div>
                 </div>
             </div>

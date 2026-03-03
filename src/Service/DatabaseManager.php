@@ -19,8 +19,8 @@ class DatabaseManager
 
     public function createDatabase(Site $site): void
     {
-        $dbName = 'wp_' . $site->getId() . '_' . bin2hex(random_bytes(4));
-        $dbUser = 'user_' . $site->getId() . '_' . bin2hex(random_bytes(4));
+        $dbName = 'site_' . $site->getId() . '_' . bin2hex(random_bytes(3));
+        $dbUser = 'siteu_' . $site->getId() . '_' . bin2hex(random_bytes(2));
         $dbPassword = bin2hex(random_bytes(16));
 
         $connectionParams = [

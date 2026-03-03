@@ -167,7 +167,7 @@
                     <th>URL</th>
                     <th><a href="{{ path('app_site_index', {sort: 'type', direction: sort == 'type' ? nextDir : 'ASC', limit: limit}) }}" style="color:inherit">Type {% if sort == 'type' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
                     <th><a href="{{ path('app_site_index', {sort: 'status', direction: sort == 'status' ? nextDir : 'ASC', limit: limit}) }}" style="color:inherit">État {% if sort == 'status' %}<i class="bi bi-caret-{{ direction == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}</a></th>
-                    <th>Git</th>
+                    <th>Source</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -182,8 +182,8 @@
                         <div class="cell-name">{{ site.name }}</div>
                     </td>
                     <td>
-                        <a href="https://{{ site.getFullUrl(base_domain) }}" target="_blank" class="domain-link">
-                            {{ site.getFullUrl(base_domain) }}<i class="bi bi-box-arrow-up-right"></i>
+                        <a href="https://{{ site.customDomain ?: site.getFullUrl(base_domain) }}" target="_blank" class="domain-link">
+                            {{ site.customDomain ?: site.getFullUrl(base_domain) }}<i class="bi bi-box-arrow-up-right"></i>
                         </a>
                     </td>
                     <td><span class="badge badge-type">{{ site.type }}</span></td>
@@ -201,7 +201,11 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if site.gitRepository %}
+                        {% if site.deploymentSource == 'local_volume' %}
+                            <span title="{{ site.localVolumePath ?: '' }}" style="color:var(--text-2)">
+                                <i class="bi bi-folder2-open"></i>
+                            </span>
+                        {% elseif site.gitRepository %}
                             <a href="{{ site.gitRepository }}" target="_blank" title="{{ site.gitRepository }}" style="color:var(--text-2)">
                                 <i class="bi bi-git"></i>
                             </a>

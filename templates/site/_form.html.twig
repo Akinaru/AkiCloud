@@ -1,75 +1,344 @@
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
 {% set isNewSiteForm = app.request.attributes.get('_route') == 'app_site_new' %}
 
+{% if isNewSiteForm %}
+<style>
+    .wizard {
+        display: grid;
+        gap: 18px;
+    }
+    .wizard-steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 24px 18px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+    .wizard-step {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        background: #f8f9fd;
+        color: var(--text-2);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: .15s ease;
+    }
+    .wizard-step-num {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 11px;
+        background: #fff;
+        flex-shrink: 0;
+    }
+    .wizard-step.active {
+        border-color: rgba(143,122,230,.45);
+        background: #f1edff;
+        color: var(--text);
+    }
+    .wizard-step.active .wizard-step-num {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+    }
+    .wizard-pane {
+        display: none;
+    }
+    .wizard-pane.active {
+        display: block;
+    }
+    .wizard-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 24px 24px 24px;
+    }
+    .wizard-actions-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .wizard-local-box {
+        padding: 14px 16px;
+        background: #f8f9fd;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        margin-top: 8px;
+        display: none;
+    }
+    @media (max-width: 900px) {
+        .wizard-steps {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="wizard" id="site-wizard">
+    <div class="wizard-steps">
+        <div class="wizard-step active" data-step-indicator="1">
+            <span class="wizard-step-num">1</span>
+            <span>Type de projet</span>
+        </div>
+        <div class="wizard-step" data-step-indicator="2">
+            <span class="wizard-step-num">2</span>
+            <span>Source & domaine</span>
+        </div>
+        <div class="wizard-step" data-step-indicator="3">
+            <span class="wizard-step-num">3</span>
+            <span>Propriétaire & options</span>
+        </div>
+    </div>
+
+    <div class="form-card-body">
+        <div class="wizard-pane active" data-step-pane="1">
+            <div class="form-grp">
+                {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.name, {'attr': {'class': 'form-control' ~ (form.name.vars.valid ? '' : ' is-invalid'), 'placeholder': 'ex: TripCip'}}) }}
+                {{ form_errors(form.name) }}
+                <span class="form-hint">Le nom sert de base au sous-domaine automatique si tu ne mets pas de domaine custom.</span>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-grp">
+                    {{ form_label(form.type, 'Runtime', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
+                    {{ form_errors(form.type) }}
+                </div>
+                <div class="form-grp">
+                    {{ form_label(form.deploymentSource, 'Source de déploiement', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.deploymentSource, {'attr': {'class': 'form-select'}}) }}
+                    {{ form_errors(form.deploymentSource) }}
+                </div>
+            </div>
+
+            <div class="form-grp">
+                {{ form_label(form.port, 'Port (optionnel)', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.port, {'attr': {'class': 'form-control', 'placeholder': '80'}}) }}
+                {{ form_errors(form.port) }}
+            </div>
+        </div>
+
+        <div class="wizard-pane" data-step-pane="2">
+            <div class="form-grp">
+                {{ form_label(form.customDomain, 'Domaine personnalisé (optionnel)', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.customDomain, {'attr': {'class': 'form-control', 'placeholder': 'ex: app.mondomaine.fr'}}) }}
+                {{ form_errors(form.customDomain) }}
+                <span class="form-hint">Si vide, le domaine sera généré automatiquement en <strong>nom.cloud.akinaru.fr</strong>.</span>
+            </div>
+
+            <div class="form-grp" id="git-source-fields">
+                {{ form_label(form.gitRepository, 'Dépôt Git public', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control', 'placeholder': 'https://github.com/owner/repo.git'}}) }}
+                {{ form_errors(form.gitRepository) }}
+                <span class="form-hint">Visible uniquement en mode Git public.</span>
+            </div>
+
+            <div id="local-volume-panel" class="wizard-local-box">
+                <div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                    <i class="bi bi-folder2-open" style="color:var(--blue);"></i>Mode volume local
+                </div>
+                <div style="font-size:12.5px;color:var(--text-2);line-height:1.5;">
+                    Le dossier sera créé automatiquement dans <code>/var/www/akicloud/&lt;domaine&gt;</code>.
+                </div>
+            </div>
+
+            <div class="form-grp" style="margin-top:12px;">
+                {{ form_label(form.publishDirectory, 'Dossier de publication', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control', 'placeholder': '/'}}) }}
+                {{ form_errors(form.publishDirectory) }}
+            </div>
+        </div>
+
+        <div class="wizard-pane" data-step-pane="3">
+            <div class="form-grp" style="margin-top: 2px;">
+                <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;" id="owner-different-label">
+                    {{ form_widget(form.ownerDifferent) }}
+                    <span class="form-label" style="margin:0;">Le propriétaire est différent de moi</span>
+                </label>
+            </div>
+
+            <div id="owner-fields-panel" style="padding: 16px; background: #f8f9fd; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px; display:none;">
+                <div style="font-weight:700;font-size:13.5px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <i class="bi bi-person-badge" style="color:var(--blue);"></i>Contact propriétaire
+                </div>
+                <div class="form-row-2">
+                    <div class="form-grp">
+                        {{ form_label(form.ownerFirstname, 'Prénom', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Jean'}}) }}
+                    </div>
+                    <div class="form-grp">
+                        {{ form_label(form.ownerLastname, 'Nom', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Dupont'}}) }}
+                    </div>
+                </div>
+                <div class="form-grp" style="margin-bottom: 0;">
+                    {{ form_label(form.ownerEmail, 'Email', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control', 'placeholder': 'ex: jean@exemple.fr'}}) }}
+                </div>
+            </div>
+
+            <div class="form-grp" style="margin-top:14px;">
+                <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                    {{ form_widget(form.createDatabase) }}
+                    <span class="form-label" style="margin:0;">Créer une base de données liée</span>
+                </label>
+            </div>
+
+            <div class="form-grp" style="margin-top: 6px;">
+                {{ form_label(form.pendingEmailTemplate, 'Email à envoyer en fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-actions">
+        <a href="{{ path('app_site_index') }}" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>Annuler
+        </a>
+        <div class="wizard-actions-right">
+            <button type="button" class="btn btn-ghost" id="wizard-prev" style="display:none;">
+                <i class="bi bi-chevron-left"></i>Précédent
+            </button>
+            <button type="button" class="btn btn-primary" id="wizard-next">
+                Suivant<i class="bi bi-chevron-right"></i>
+            </button>
+            <button type="submit" class="btn btn-primary" id="wizard-submit" style="display:none;">
+                <i class="bi bi-check-lg"></i>{{ button_label|default('Créer le site') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const totalSteps = 3;
+    let currentStep = 1;
+
+    const prevBtn = document.getElementById('wizard-prev');
+    const nextBtn = document.getElementById('wizard-next');
+    const submitBtn = document.getElementById('wizard-submit');
+    const sourceSelect = document.getElementById('{{ form.deploymentSource.vars.id }}');
+    const gitPanel = document.getElementById('git-source-fields');
+    const localPanel = document.getElementById('local-volume-panel');
+    const gitInput = document.getElementById('{{ form.gitRepository.vars.id }}');
+
+    const ownerToggle = document.querySelector('input[type="checkbox"][name$="[ownerDifferent]"]');
+    const ownerPanel = document.getElementById('owner-fields-panel');
+
+    function syncOwnerPanel() {
+        if (!ownerToggle || !ownerPanel) return;
+        ownerPanel.style.display = ownerToggle.checked ? 'block' : 'none';
+    }
+
+    function syncSourcePanels() {
+        if (!sourceSelect) return;
+        const isLocal = sourceSelect.value === 'local_volume';
+        if (gitPanel) gitPanel.style.display = isLocal ? 'none' : '';
+        if (localPanel) localPanel.style.display = isLocal ? 'block' : 'none';
+        if (gitInput) gitInput.required = !isLocal;
+    }
+
+    function renderStep() {
+        document.querySelectorAll('[data-step-pane]').forEach(function (pane) {
+            pane.classList.toggle('active', Number(pane.dataset.stepPane) === currentStep);
+        });
+        document.querySelectorAll('[data-step-indicator]').forEach(function (item) {
+            item.classList.toggle('active', Number(item.dataset.stepIndicator) === currentStep);
+        });
+
+        if (prevBtn) prevBtn.style.display = currentStep === 1 ? 'none' : '';
+        if (nextBtn) nextBtn.style.display = currentStep === totalSteps ? 'none' : '';
+        if (submitBtn) submitBtn.style.display = currentStep === totalSteps ? '' : 'none';
+    }
+
+    function validateStep(step) {
+        if (step === 1) {
+            const name = document.getElementById('{{ form.name.vars.id }}');
+            const type = document.getElementById('{{ form.type.vars.id }}');
+            return !!(name && name.value.trim() && type && type.value.trim());
+        }
+        if (step === 2) {
+            if (sourceSelect && sourceSelect.value === 'git_public') {
+                return !!(gitInput && gitInput.value.trim());
+            }
+        }
+        return true;
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+            if (!validateStep(currentStep)) {
+                alert('Merci de compléter les champs requis avant de continuer.');
+                return;
+            }
+            if (currentStep < totalSteps) {
+                currentStep += 1;
+                renderStep();
+            }
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function () {
+            if (currentStep > 1) {
+                currentStep -= 1;
+                renderStep();
+            }
+        });
+    }
+
+    syncOwnerPanel();
+    syncSourcePanels();
+    renderStep();
+
+    if (ownerToggle) ownerToggle.addEventListener('change', syncOwnerPanel);
+    if (sourceSelect) sourceSelect.addEventListener('change', syncSourcePanels);
+});
+</script>
+
+{% else %}
+
 <div class="form-card-body">
     <div class="form-grp">
         {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.name, {'attr': {'class': 'form-control' ~ (form.name.vars.valid ? '' : ' is-invalid'), 'placeholder': 'ex: site-dupont-2024'}}) }}
+        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
         {{ form_errors(form.name) }}
-        <span class="form-hint">Nom fonctionnel du site sur la plateforme.</span>
     </div>
 
     <div class="form-row-2">
         <div class="form-grp">
             {{ form_label(form.type, 'Runtime', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.type, {'attr': {'class': 'form-select' ~ (form.type.vars.valid ? '' : ' is-invalid')}}) }}
-            {{ form_errors(form.type) }}
+            {{ form_widget(form.type, {'attr': {'class': 'form-select'}}) }}
         </div>
         <div class="form-grp">
-            {{ form_label(form.port, 'Port (Optionnel)', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.port, {'attr': {'class': 'form-control' ~ (form.port.vars.valid ? '' : ' is-invalid'), 'placeholder': '80'}}) }}
-            {{ form_errors(form.port) }}
+            {{ form_label(form.port, 'Port', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.port, {'attr': {'class': 'form-control'}}) }}
         </div>
     </div>
 
     <div class="form-row-2">
         <div class="form-grp">
-            {{ form_label(form.gitRepository, 'Dépôt Git', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.gitRepository, {'attr': {'class': 'form-control' ~ (form.gitRepository.vars.valid ? '' : ' is-invalid'), 'placeholder': 'git@github.com:owner/repo.git'}}) }}
-            {{ form_errors(form.gitRepository) }}
-            <span class="form-hint">Optionnel. Si vide, un site vierge de maintenance sera deploye automatiquement.</span>
+            {{ form_label(form.customDomain, 'Domaine custom', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.customDomain, {'attr': {'class': 'form-control'}}) }}
         </div>
         <div class="form-grp">
-            {{ form_label(form.publishDirectory, 'Publish directory', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control' ~ (form.publishDirectory.vars.valid ? '' : ' is-invalid'), 'placeholder': '/'}}) }}
-            {{ form_errors(form.publishDirectory) }}
-            <span class="form-hint">Dossier final servi par le runtime.</span>
+            {{ form_label(form.publishDirectory, 'Dossier de publication', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.publishDirectory, {'attr': {'class': 'form-control'}}) }}
         </div>
     </div>
 
-    {% if isNewSiteForm %}
-    <div class="form-grp" style="margin-top: 8px;">
-        <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;" id="owner-different-label">
-            {{ form_widget(form.ownerDifferent) }}
-            <span class="form-label" style="margin:0;">Le proprietaire est different de moi</span>
-        </label>
-    </div>
-    {% endif %}
-
-    <div id="owner-fields-panel" style="padding: 20px; background: #f8f9fd; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px; {% if isNewSiteForm %}display:none;{% endif %}">
-        <div style="font-weight: 700; font-size: 13.5px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-person-badge" style="color: var(--blue);"></i>Informations contact (Optionnel)
-        </div>
-        <div class="form-row-2">
-            <div class="form-grp">
-                {{ form_label(form.ownerFirstname, 'Prénom', {'label_attr': {'class': 'form-label'}}) }}
-                {{ form_widget(form.ownerFirstname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Jean'}}) }}
-            </div>
-            <div class="form-grp">
-                {{ form_label(form.ownerLastname, 'Nom', {'label_attr': {'class': 'form-label'}}) }}
-                {{ form_widget(form.ownerLastname, {'attr': {'class': 'form-control', 'placeholder': 'ex: Dupont'}}) }}
-            </div>
-        </div>
-        <div class="form-grp" style="margin-bottom: 0;">
-            {{ form_label(form.ownerEmail, 'Email', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(form.ownerEmail, {'attr': {'class': 'form-control', 'placeholder': 'ex: jean.dupont@akinaru.fr'}}) }}
-        </div>
-    </div>
-
-    <div class="form-grp" style="margin-top: 12px;">
-        {{ form_label(form.pendingEmailTemplate, 'Notifier à la fin du déploiement', {'label_attr': {'class': 'form-label'}}) }}
+    <div class="form-grp">
+        {{ form_label(form.pendingEmailTemplate, 'Email de fin de déploiement', {'label_attr': {'class': 'form-label'}}) }}
         {{ form_widget(form.pendingEmailTemplate, {'attr': {'class': 'form-select'}}) }}
-        <span class="form-hint">Email envoyé automatiquement quand l'instance passe en Running.</span>
     </div>
 </div>
 
@@ -82,29 +351,6 @@
     </button>
 </div>
 
-{{ form_end(form) }}
-
-{% if isNewSiteForm %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var toggle = document.querySelector('input[type="checkbox"][name$="[ownerDifferent]"]');
-    if (!toggle) {
-        var label = document.getElementById('owner-different-label');
-        if (label) {
-            toggle = label.querySelector('input[type="checkbox"]');
-        }
-    }
-    var panel = document.getElementById('owner-fields-panel');
-    if (!toggle || !panel) {
-        return;
-    }
-
-    var syncVisibility = function () {
-        panel.style.display = toggle.checked ? 'block' : 'none';
-    };
-
-    syncVisibility();
-    toggle.addEventListener('change', syncVisibility);
-});
-</script>
 {% endif %}
+
+{{ form_end(form) }}
