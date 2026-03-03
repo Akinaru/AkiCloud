@@ -1,6 +1,14 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}Nouveau site{% endblock %}
+{% block stylesheets %}
+<style>
+    .site-new-screen .form-card {
+        max-width: none;
+        width: 100%;
+    }
+</style>
+{% endblock %}
 
 {% block breadcrumb %}
     <span class="bc-item">AkiCloud</span>
@@ -11,6 +19,7 @@
 {% endblock %}
 
 {% block body %}
+    <div class="site-new-screen">
     <a href="{{ path('app_site_index') }}" class="back-link">
         <i class="bi bi-arrow-left"></i>Retour aux sites
     </a>
@@ -18,15 +27,10 @@
     <div class="page-hd">
         <div>
             <div class="page-title">Créer un nouveau site</div>
-            <div class="page-sub">Renseignez les informations de la nouvelle instance.</div>
+            <div class="page-sub">Configuration rapide: nom, domaine et accès. Le reste est provisionné automatiquement.</div>
         </div>
     </div>
 
-    <div class="form-card">
-        <div class="form-card-hd">
-            <div class="form-card-title"><i class="bi bi-plus-circle" style="color:var(--blue);margin-right:8px"></i>Informations du site</div>
-            <div class="form-card-sub">Tous les champs sont requis sauf mention contraire.</div>
-        </div>
-        {{ include('site/_form.html.twig') }}
+    {{ include('site/_quick_create_form.html.twig') }}
     </div>
 {% endblock %}

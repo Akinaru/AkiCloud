@@ -3,13 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\Site;
+use App\Entity\User;
 use App\Form\SiteType;
+use App\Form\SiteQuickCreateType;
 use App\Repository\SettingRepository;
 use App\Repository\SiteRepository;
 use App\Service\CoolifyApiService;
 use App\Service\DatabaseManager;
 use App\Service\EventLoggerService;
-use App\Entity\User;
 use App\Service\WordPressConfigService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -43,25 +44,37 @@ final class SiteController extends AbstractController
     ): Response {
         $site = new Site();
         $site->setStatus(Site::STATUS_BUILDING);
+        $site->setType('static');
+        $site->setDeploymentSource(Site::SOURCE_LOCAL_VOLUME);
+        $site->setGitRepository(null);
         $site->setPort(80);
         $site->setPublishDirectory('/');
         $site->setCreateDatabase(true);
 
-        $form = $this->createForm(SiteType::class, $site);
+        $form = $this->createForm(SiteQuickCreateType::class, $site);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $baseDomain = (string) $settingRepository->getValue('base_domain', 'cloud.akinaru.fr');
+            $domainMode = (string) $form->get('domainMode')->getData();
             $customDomain = $this->normalizeHost($site->getCustomDomain());
-            $site->setCustomDomain($customDomain);
+            if ($domainMode === 'custom') {
+                if ($customDomain === null) {
+                    $this->addFlash('error', 'Le domaine personnalisé est requis si ce mode est sélectionné.');
+                    return $this->redirectToRoute('app_site_new');
+                }
+                $site->setCustomDomain($customDomain);
+            } else {
+                $site->setCustomDomain(null);
+            }
 
-            $effectiveDomain = $customDomain ?: $site->getFullUrl($baseDomain);
+            $effectiveDomain = $site->getFullUrl($baseDomain);
             if (!$effectiveDomain) {
                 $this->addFlash('error', 'Impossible de résoudre le domaine du site.');
                 return $this->redirectToRoute('app_site_new');
             }
 
-            if ($customDomain) {
+            if ($site->getCustomDomain()) {
                 $existingDomainSite = $siteRepository->findOneBy(['customDomain' => $customDomain]);
                 if ($existingDomainSite) {
                     $this->addFlash('error', 'Ce nom de domaine custom est déjà utilisé.');
@@ -75,38 +88,21 @@ final class SiteController extends AbstractController
                 }
             }
 
-            if ($site->getDeploymentSource() === Site::SOURCE_GIT_PUBLIC) {
-                $repo = trim((string) $site->getGitRepository());
-                if ($repo === '') {
-                    $this->addFlash('error', 'Le dépôt Git public est requis pour le mode Git.');
-                    return $this->redirectToRoute('app_site_new');
-                }
-                if (!preg_match('/^(https?:\/\/|git@).+/i', $repo)) {
-                    $this->addFlash('error', 'Le dépôt Git doit être une URL publique valide (https://... ou git@...).');
-                    return $this->redirectToRoute('app_site_new');
-                }
-                $site->setGitRepository($repo);
-            } else {
-                $site->setGitRepository(null);
-                $volumePath = '/var/www/akicloud/' . $effectiveDomain;
-                $site->setLocalVolumePath($volumePath);
-                try {
-                    $this->ensureLocalVolumeScaffold($volumePath, $site->getName() ?? 'Projet');
-                } catch (\Throwable $e) {
-                    $logger->error(sprintf('Création volume local échouée pour "%s": %s', $site->getName(), $e->getMessage()));
-                    $this->addFlash('error', 'Impossible de créer le volume local: vérifie les permissions sur /var/www/akicloud.');
-                    return $this->redirectToRoute('app_site_new');
-                }
-            }
+            $site->setType('static');
+            $site->setDeploymentSource(Site::SOURCE_LOCAL_VOLUME);
+            $site->setGitRepository(null);
+            $site->setPort(80);
+            $site->setPublishDirectory('/');
+            $site->setCreateDatabase(true);
 
-            $ownerDifferent = (bool) $form->get('ownerDifferent')->getData();
-            if (!$ownerDifferent) {
-                $currentUser = $this->getUser();
-                if ($currentUser instanceof User) {
-                    $site->setOwnerFirstname((string) $currentUser->getFirstName());
-                    $site->setOwnerLastname((string) $currentUser->getLastName());
-                    $site->setOwnerEmail((string) $currentUser->getEmail());
-                }
+            $volumePath = '/var/www/akicloud/' . $effectiveDomain;
+            $site->setLocalVolumePath($volumePath);
+            try {
+                $this->ensureLocalVolumeScaffold($volumePath, $site->getName() ?? 'Projet');
+            } catch (\Throwable $e) {
+                $logger->error(sprintf('Création volume local échouée pour "%s": %s', $site->getName(), $e->getMessage()));
+                $this->addFlash('error', 'Impossible de créer le volume local: vérifie les permissions sur /var/www/akicloud.');
+                return $this->redirectToRoute('app_site_new');
             }
 
             $entityManager->persist($site);

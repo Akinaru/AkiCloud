@@ -1,0 +1,419 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+<div class="form-card">
+    <div class="form-card-hd">
+        <div class="form-card-title"><i class="bi bi-plus-circle" style="color:var(--blue);margin-right:8px"></i>Nouveau site</div>
+        <div class="form-card-sub">Un template de base Coolify sera déployé automatiquement.</div>
+    </div>
+
+    <div class="form-card-body">
+        <div class="form-grp">
+            {{ form_label(form.name, 'Nom du site', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.name, {'attr': {'class': 'form-control', 'placeholder': 'ex: Projet Atelier 01'}}) }}
+            {{ form_errors(form.name) }}
+            <span class="form-hint">Le sous-domaine par défaut est généré depuis ce nom.</span>
+        </div>
+
+        <div class="form-grp" style="margin-top: 14px;">
+            {{ form_label(form.domainMode, 'Type de domaine', {'label_attr': {'class': 'form-label'}}) }}
+            <div style="display:flex;flex-wrap:wrap;gap:14px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;">
+                {% for choice in form.domainMode %}
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        {{ form_widget(choice) }}
+                        <span>{{ choice.vars.label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            {{ form_errors(form.domainMode) }}
+        </div>
+
+        <div class="form-grp" id="subdomain-help" style="margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #f8f9fd;">
+            <div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px;">Sous-domaine automatique</div>
+            <div style="font-size:12.5px;color:var(--text-2);line-height:1.5;">
+                Le site sera créé en <strong id="subdomain-preview">nom-du-site.cloud.akinaru.fr</strong>
+            </div>
+        </div>
+
+        <div class="form-grp" id="custom-domain-group" style="margin-top: 12px; display:none;">
+            {{ form_label(form.customDomain, 'Domaine personnalisé', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.customDomain, {'attr': {'class': 'form-control', 'placeholder': 'ex: app.mondomaine.fr'}}) }}
+            {{ form_errors(form.customDomain) }}
+        </div>
+
+        <div class="form-grp" style="margin-top: 14px;">
+            <label class="check-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                {{ form_widget(form.isProtected) }}
+                <span class="form-label" style="margin:0;">Protéger ce site (login + droits)</span>
+            </label>
+            <span class="form-hint">Si activé, seuls les utilisateurs autorisés (et admins) auront accès.</span>
+        </div>
+
+        <section class="access-block" style="margin-top:14px;">
+            <div class="access-block-hd">
+                <div class="access-panel-title">
+                    <i class="bi bi-person-check" style="color:var(--blue);"></i>Utilisateurs autorisés
+                </div>
+                <span class="access-panel-count" id="authorized-count-new">0 sélectionné</span>
+            </div>
+
+            {{ form_widget(form.authorizedUsers, {'attr': {'class': 'js-authorized-users-native', 'style': 'display:none;', 'size': 10}}) }}
+            {{ form_errors(form.authorizedUsers) }}
+
+            <div class="ua-manager">
+                <div class="ua-col">
+                    <div class="ua-col-hd">
+                        <span>Tous les utilisateurs</span>
+                        <span id="ua-available-count">0</span>
+                    </div>
+                    <div class="ua-search-wrap">
+                        <input type="text" class="ua-search" id="ua-search" placeholder="Rechercher par nom ou email...">
+                    </div>
+                    <ul class="ua-list" id="ua-available-list"></ul>
+                </div>
+                <div class="ua-col">
+                    <div class="ua-col-hd">
+                        <span>Accès accordés</span>
+                        <span id="ua-selected-count">0</span>
+                    </div>
+                    <ul class="ua-list" id="ua-selected-list"></ul>
+                </div>
+            </div>
+
+            <div class="ua-tools">
+                <button type="button" class="btn btn-secondary btn-sm" id="ua-add-filtered">
+                    <i class="bi bi-plus-lg"></i>Ajouter les filtrés
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" id="ua-clear-all">
+                    <i class="bi bi-x-circle"></i>Tout retirer
+                </button>
+            </div>
+            <p class="access-block-hint">Même logique que l'édition: recherche, ajout/retrait en un clic, synchro automatique.</p>
+        </section>
+    </div>
+
+    <div class="form-card-ft">
+        <a href="{{ path('app_site_index') }}" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>Annuler
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i>Créer le site
+        </button>
+    </div>
+</div>
+
+<style>
+    .access-block {
+        border: 1px solid var(--border);
+        background: #f8f9fd;
+        border-radius: 12px;
+        padding: 14px 16px;
+    }
+    .access-block-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .access-panel-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .access-panel-count {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--blue);
+        background: #ece8ff;
+        border: 1px solid rgba(143,122,230,.35);
+        border-radius: 999px;
+        padding: 2px 8px;
+    }
+    .ua-manager {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+    .ua-col {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+    }
+    .ua-col-hd {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    .ua-search-wrap {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    .ua-search {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 12px;
+        background: #fff;
+        color: var(--text);
+        outline: none;
+    }
+    .ua-search:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(143,122,230,.16);
+    }
+    .ua-list {
+        list-style: none;
+        margin: 0;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow: auto;
+        flex: 1;
+    }
+    .ua-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: #fbfcff;
+    }
+    .ua-item-main {
+        min-width: 0;
+    }
+    .ua-item-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ua-item-email {
+        font-size: 11.5px;
+        color: var(--text-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ua-item-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text-2);
+        border-radius: 7px;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .ua-item-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+    }
+    .ua-item-btn.danger:hover {
+        border-color: var(--red);
+        color: var(--red);
+    }
+    .ua-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .access-block-hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-2);
+        line-height: 1.45;
+    }
+    @media (max-width: 980px) {
+        .ua-manager {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const domainModeInputs = document.querySelectorAll('input[name="{{ form.domainMode.vars.full_name }}"]');
+    const customDomainGroup = document.getElementById('custom-domain-group');
+    const subdomainHelp = document.getElementById('subdomain-help');
+    const customDomainInput = document.getElementById('{{ form.customDomain.vars.id }}');
+    const siteNameInput = document.getElementById('{{ form.name.vars.id }}');
+    const subdomainPreview = document.getElementById('subdomain-preview');
+
+    function slugify(value) {
+        return value
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'nom-du-site';
+    }
+
+    function getDomainMode() {
+        const selected = Array.from(domainModeInputs).find(function (input) { return input.checked; });
+        return selected ? selected.value : 'subdomain';
+    }
+
+    function syncDomainMode() {
+        const isCustom = getDomainMode() === 'custom';
+        if (customDomainGroup) customDomainGroup.style.display = isCustom ? '' : 'none';
+        if (subdomainHelp) subdomainHelp.style.display = isCustom ? 'none' : '';
+        if (customDomainInput) customDomainInput.required = isCustom;
+    }
+
+    function syncSubdomainPreview() {
+        if (!subdomainPreview || !siteNameInput) return;
+        subdomainPreview.textContent = slugify(siteNameInput.value) + '.cloud.akinaru.fr';
+    }
+
+    const nativeSelect = document.getElementById('{{ form.authorizedUsers.vars.id }}');
+    const mainCount = document.getElementById('authorized-count-new');
+    const availableCount = document.getElementById('ua-available-count');
+    const selectedCount = document.getElementById('ua-selected-count');
+    const availableList = document.getElementById('ua-available-list');
+    const selectedList = document.getElementById('ua-selected-list');
+    const searchInput = document.getElementById('ua-search');
+    const addFilteredBtn = document.getElementById('ua-add-filtered');
+    const clearAllBtn = document.getElementById('ua-clear-all');
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    if (nativeSelect && mainCount && availableList && selectedList) {
+        const users = Array.from(nativeSelect.options).map(function (option) {
+            const label = option.textContent || '';
+            const match = label.match(/^(.*)\s+\(([^)]+)\)$/);
+            const name = match ? match[1] : label;
+            const email = match ? match[2] : '';
+            return {
+                value: option.value,
+                name: name,
+                email: email,
+                search: (name + ' ' + email).toLowerCase()
+            };
+        });
+
+        function setSelected(userId, selected) {
+            const option = Array.from(nativeSelect.options).find(function (opt) { return opt.value === userId; });
+            if (option) option.selected = selected;
+        }
+
+        function isSelected(userId) {
+            const option = Array.from(nativeSelect.options).find(function (opt) { return opt.value === userId; });
+            return !!option && option.selected;
+        }
+
+        function getSearchTerm() {
+            return (searchInput?.value || '').trim().toLowerCase();
+        }
+
+        function renderLists() {
+            const term = getSearchTerm();
+            const available = users.filter(function (u) { return !isSelected(u.value) && (term === '' || u.search.includes(term)); });
+            const selected = users.filter(function (u) { return isSelected(u.value); });
+
+            availableList.innerHTML = available.map(function (u) {
+                return `
+                    <li class="ua-item">
+                        <div class="ua-item-main">
+                            <div class="ua-item-name">${escapeHtml(u.name)}</div>
+                            <div class="ua-item-email">${escapeHtml(u.email)}</div>
+                        </div>
+                        <button type="button" class="ua-item-btn" data-action="add" data-user="${u.value}" title="Ajouter">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </li>
+                `;
+            }).join('');
+
+            selectedList.innerHTML = selected.map(function (u) {
+                return `
+                    <li class="ua-item">
+                        <div class="ua-item-main">
+                            <div class="ua-item-name">${escapeHtml(u.name)}</div>
+                            <div class="ua-item-email">${escapeHtml(u.email)}</div>
+                        </div>
+                        <button type="button" class="ua-item-btn danger" data-action="remove" data-user="${u.value}" title="Retirer">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </li>
+                `;
+            }).join('');
+
+            mainCount.textContent = selected.length > 1 ? `${selected.length} sélectionnés` : `${selected.length} sélectionné`;
+            if (availableCount) availableCount.textContent = String(available.length);
+            if (selectedCount) selectedCount.textContent = String(selected.length);
+        }
+
+        availableList.addEventListener('click', function (event) {
+            const btn = event.target.closest('[data-action="add"]');
+            if (!btn) return;
+            setSelected(btn.getAttribute('data-user'), true);
+            renderLists();
+        });
+
+        selectedList.addEventListener('click', function (event) {
+            const btn = event.target.closest('[data-action="remove"]');
+            if (!btn) return;
+            setSelected(btn.getAttribute('data-user'), false);
+            renderLists();
+        });
+
+        searchInput?.addEventListener('input', renderLists);
+
+        addFilteredBtn?.addEventListener('click', function () {
+            const term = getSearchTerm();
+            users.forEach(function (u) {
+                if (!isSelected(u.value) && (term === '' || u.search.includes(term))) {
+                    setSelected(u.value, true);
+                }
+            });
+            renderLists();
+        });
+
+        clearAllBtn?.addEventListener('click', function () {
+            users.forEach(function (u) { setSelected(u.value, false); });
+            renderLists();
+        });
+
+        renderLists();
+    }
+
+    domainModeInputs.forEach(function (input) {
+        input.addEventListener('change', syncDomainMode);
+    });
+    siteNameInput?.addEventListener('input', syncSubdomainPreview);
+
+    syncDomainMode();
+    syncSubdomainPreview();
+});
+</script>
+
+{{ form_end(form) }}
