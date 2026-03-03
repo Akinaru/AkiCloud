@@ -40,5 +40,9 @@ services:
         arguments:
             $appPublicUrl: '%env(APP_PUBLIC_URL)%'
 
+    App\Service\SiteSecurityTokenService:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

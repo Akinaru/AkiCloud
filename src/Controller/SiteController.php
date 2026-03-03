@@ -366,10 +366,6 @@ final class SiteController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            if ($site->getCoolifyUuid()) {
-                $coolifyApi->syncProtection($site);
-            }
-
             $this->addFlash('success', sprintf('Site "%s" modifie avec succes.', $site->getName()));
             return $this->redirectToRoute('app_site_index', [], Response::HTTP_SEE_OTHER);
         }
