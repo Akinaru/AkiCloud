@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inviter un utilisateur{% endblock %}
+
+{% block breadcrumb %}
+    <span class="bc-item">AkiCloud</span>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <a href="{{ path('admin_user_index') }}" class="bc-item">Utilisateurs</a>
+    <i class="bi bi-chevron-right bc-sep"></i>
+    <span class="bc-item current">Invitation</span>
+{% endblock %}
+
+{% block body %}
+    <a href="{{ path('admin_user_index') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i>Retour aux utilisateurs
+    </a>
+
+    {{ form_start(form) }}
+        <div class="form-card" style="max-width:720px">
+            <div class="form-card-hd">
+                <div class="form-card-title">Inviter un utilisateur</div>
+                <div class="form-card-sub">Un email d'invitation sera envoyé pour créer le compte.</div>
+            </div>
+
+            <div class="form-card-body">
+                <div class="form-grp">
+                    {{ form_label(form.email, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.email, {'attr': {'class': 'form-control' ~ (form.email.vars.errors|length ? ' is-invalid' : '')}}) }}
+                    {% if form.email.vars.errors|length %}
+                        <div class="invalid-feedback">{{ form.email.vars.errors[0].message }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-grp">
+                    {{ form_label(form.role, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.role, {'attr': {'class': 'form-select'}}) }}
+                    <span class="form-hint">Le rôle est appliqué automatiquement à la création du compte.</span>
+                </div>
+            </div>
+
+            <div class="form-card-ft">
+                <a href="{{ path('admin_user_index') }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i>Envoyer l'invitation
+                </button>
+            </div>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block head %}
+    <h1 class="title">Invitation à rejoindre AkiCloud</h1>
+{% endblock %}
+
+{% block body %}
+    <p>Tu as été invité à créer ton compte pour accéder à un espace AkiCloud.</p>
+
+    <p style="text-align:center;">
+        <a href="{{ invite_url }}" class="cta">Créer mon compte</a>
+    </p>
+
+    <div class="note">
+        Ce lien expire le <strong>{{ expires_at|date('d/m/Y à H:i') }}</strong>.
+    </div>
+
+    <p style="margin-top: 18px;">Si le bouton ne fonctionne pas, copie ce lien:</p>
+    <p class="muted">{{ invite_url }}</p>
+{% endblock %}
