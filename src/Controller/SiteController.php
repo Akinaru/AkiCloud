@@ -264,7 +264,14 @@ final class SiteController extends AbstractController
                     break;
                 case 'delete':
                     if ($site->getCoolifyUuid()) {
-                        $coolifyApi->deleteResource($site->getCoolifyUuid());
+                        $deleted = $coolifyApi->deleteResource($site->getCoolifyUuid());
+                        if (!$deleted) {
+                            $this->addFlash('error', sprintf(
+                                'Suppression Coolify échouée pour "%s". Le site n a pas été supprimé localement.',
+                                $site->getName()
+                            ));
+                            continue 2;
+                        }
                     }
                     $name = $site->getName();
                     $entityManager->remove($site);
@@ -382,7 +389,20 @@ final class SiteController extends AbstractController
     {
         if ($this->isCsrfTokenValid('delete' . $site->getId(), $request->getPayload()->getString('_token'))) {
             if ($site->getCoolifyUuid()) {
-                $coolifyApi->deleteResource($site->getCoolifyUuid());
+                $deleted = $coolifyApi->deleteResource($site->getCoolifyUuid());
+                if (!$deleted) {
+                    $logger->error(sprintf(
+                        'Suppression Coolify échouée pour "%s" (%s).',
+                        $site->getName(),
+                        $site->getCoolifyUuid()
+                    ));
+                    $this->addFlash('error', sprintf(
+                        'Suppression Coolify échouée pour "%s". Le site local est conservé.',
+                        $site->getName()
+                    ));
+
+                    return $this->redirectToRoute('app_site_index', [], Response::HTTP_SEE_OTHER);
+                }
             }
 
             $name = $site->getName();
